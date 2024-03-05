@@ -4,15 +4,15 @@
 <br />
 <div align="center">
 
-  <h1 align="center">NAME OF CHOSEN GAME</h1>
+  <h1 align="center">Scott Pilgrim VS. The World</h1>
 
   <p align="center">
-    Short description of the game.
+    A retro style side-scrolling beat 'em up.
     <br />
     <strong>Original game : </strong>
-    <a href="https://www.google.be/"><strong>General info »</strong></a>
+    <a href="https://en.wikipedia.org/wiki/Scott_Pilgrim_vs._the_World:_The_Game"><strong>General info »</strong></a>
     ·
-    <a href="https://www.google.be/"><strong>Youtube video »<strong></a>
+    <a href="https://youtu.be/L7qtF4An6Yg"><strong>Youtube video »<strong></a>
     <br />
     <br />
   </p>
@@ -50,8 +50,10 @@ TODO: add screenshot
 
 Here's why:
 TODO: describe why you chose this game 
-* reason 1
-* reason .. 
+* I wanted to make a side-scrolling beat'em up.
+* The game has the potential to get full marks.
+* The soundtrack is great and the sprites are easy to get online.
+* I liked the movie.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -61,16 +63,19 @@ TODO: describe why you chose this game
 This section gives a clear and detailed overview of which parts of the original game I planned to make.
 
 ### The minimum I will most certainly develop:
-* .. 
-* .. 
+* Player Moves: Light attack, Heavy attack, Block. 
+* Different Enemy types.
+* Moving Camera.
+* Pick ups: Different Coins, Weapons.
+* Menu-, Pause Screen.
 
 ### What I will probably make as well:
-* .. 
-* .. 
+* A pit you can fall in.
+* Settings.
 
 ### What I plan to create if I have enough time left:
-* .. 
-* .. 
+* Add more enemy types.
+* Stage events.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

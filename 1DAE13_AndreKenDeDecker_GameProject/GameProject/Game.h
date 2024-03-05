@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseGame.h"
+#include "ScottPilgrim.h"
 class Game : public BaseGame
 {
 public:
@@ -27,4 +28,7 @@ private:
 	void Initialize();
 	void Cleanup( );
 	void ClearBackground( ) const;
+
+	//Variables
+	ScottPilgrim* m_ptrPlayer;
 };

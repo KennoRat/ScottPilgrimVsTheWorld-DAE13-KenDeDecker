@@ -14,7 +14,7 @@ Game::~Game( )
 
 void Game::Initialize( )
 {
-	
+	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().bottom, GetViewPort().height / 4.f }, 200.f, 300.f);
 }
 
 void Game::Cleanup( )
@@ -33,11 +33,14 @@ void Game::Update( float elapsedSec )
 	//{
 	//	std::cout << "Left and up arrow keys are down\n";
 	//}
+
+	m_ptrPlayer->Update(elapsedSec);
 }
 
 void Game::Draw( ) const
 {
 	ClearBackground( );
+	m_ptrPlayer->Draw();
 }
 
 void Game::ProcessKeyDownEvent( const SDL_KeyboardEvent & e )
