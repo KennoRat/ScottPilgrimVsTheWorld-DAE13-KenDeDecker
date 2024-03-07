@@ -1,6 +1,7 @@
 #pragma once
 #include <Vector2f.h>
 #include "Texture.h"
+#include "Transform.h"
 
 class ScottPilgrim
 {
@@ -10,8 +11,14 @@ public:
 
 	void Draw() const;
 	void Update(float elapsedSec);
-	void Move();
+	void Move(float elapsedSec, bool moveRight, bool moveLeft = false ,bool moveUp = false, bool moveDown = false);
 
+	enum class Status
+	{
+		Idle = 1, Moving = 3
+	};
+
+	Status m_ScottStatus;
 
 private:
 	bool m_IsAlive;
@@ -24,5 +31,9 @@ private:
 	float m_MaxFrame;
 	float m_AnimationCounter;
 	float m_MaxAnimation;
+	Transform m_Transform{};
+	
+	bool m_NotIdle;
+	void ResetFrame();
 };
 

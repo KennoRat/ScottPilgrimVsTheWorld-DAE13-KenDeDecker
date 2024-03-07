@@ -19,20 +19,13 @@ void Game::Initialize( )
 
 void Game::Cleanup( )
 {
+	delete m_ptrPlayer;
+	m_ptrPlayer = nullptr;
 }
 
 void Game::Update( float elapsedSec )
 {
-	// Check keyboard state
-	//const Uint8 *pStates = SDL_GetKeyboardState( nullptr );
-	//if ( pStates[SDL_SCANCODE_RIGHT] )
-	//{
-	//	std::cout << "Right arrow key is down\n";
-	//}
-	//if ( pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_UP])
-	//{
-	//	std::cout << "Left and up arrow keys are down\n";
-	//}
+	PlayeMove(elapsedSec);
 
 	m_ptrPlayer->Update(elapsedSec);
 }
@@ -110,4 +103,47 @@ void Game::ClearBackground( ) const
 {
 	glClearColor( 0.0f, 0.0f, 0.3f, 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT );
+}
+
+void Game::PlayeMove(float elapsedSec)
+{
+	// Check keyboard state
+	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+
+	if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_UP])
+	{
+		m_ptrPlayer->Move(elapsedSec, true, false, true);
+	}
+	else if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_DOWN])
+	{
+		m_ptrPlayer->Move(elapsedSec, true, false, false, true);
+	}
+	else if (pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_UP])
+	{
+		m_ptrPlayer->Move(elapsedSec, false, true, true);
+	}
+	else if (pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_DOWN])
+	{
+		m_ptrPlayer->Move(elapsedSec, false, true, false, true);
+	}
+	else if (pStates[SDL_SCANCODE_RIGHT])
+	{
+		m_ptrPlayer->Move(elapsedSec, true, false);
+	}
+	else if (pStates[SDL_SCANCODE_LEFT])
+	{
+		m_ptrPlayer->Move(elapsedSec, false, true);
+	}
+	else if (pStates[SDL_SCANCODE_DOWN])
+	{
+		m_ptrPlayer->Move(elapsedSec, false, false, false, true);
+	}
+	else if (pStates[SDL_SCANCODE_UP])
+	{
+		m_ptrPlayer->Move(elapsedSec, false, false, true);
+	}
+	else
+	{
+		m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::Idle;
+	}
 }

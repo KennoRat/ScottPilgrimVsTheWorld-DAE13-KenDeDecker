@@ -28,6 +28,7 @@ private:
 	void Initialize();
 	void Cleanup( );
 	void ClearBackground( ) const;
+	void PlayeMove(float elapsedSec);
 
 	//Variables
 	ScottPilgrim* m_ptrPlayer;
