@@ -1,6 +1,10 @@
 #pragma once
 #include "BaseGame.h"
 #include "ScottPilgrim.h"
+#include "EnemyMike.h"
+#include "Camera.h"
+#include <iostream>
+
 class Game : public BaseGame
 {
 public:
@@ -32,4 +36,8 @@ private:
 
 	//Variables
 	ScottPilgrim* m_ptrPlayer;
+	Texture* m_ptrMap;
+	Camera* m_ptrCamera;
+	EnemyMike* m_ptrTestEnemy;
+
 };

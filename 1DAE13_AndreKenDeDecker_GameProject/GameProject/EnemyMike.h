@@ -2,29 +2,27 @@
 #include <Vector2f.h>
 #include "Texture.h"
 
-
-class ScottPilgrim final
+class EnemyMike
 {
 public:
-	ScottPilgrim(Point2f position, float width, float height);
-	~ScottPilgrim();
+
+	EnemyMike(Point2f position, float width, float height);
+	~EnemyMike();
 
 	void Draw() const;
 	void Update(float elapsedSec);
-	void Move(float elapsedSec, bool moveRight, bool moveLeft = false ,bool moveUp = false, bool moveDown = false);
-	void Attack(bool lightAttack);
 	void TranslateSprite() const;
 	void ResetSprite() const;
-	bool CheckIdle() const;
 
 	Point2f GetPosition() const;
 
 	enum class Status
 	{
-		Idle = 1, MovingLeft = 3, MovingRight = 4 ,LightAttack = 35
+		Idle = 1
 	};
 
-	Status m_ScottStatus;
+	Status m_EnemyStatus;
+
 private:
 	bool m_IsAlive;
 	bool m_IsAttacking;
@@ -38,7 +36,7 @@ private:
 	float m_MaxFrame;
 	float m_AnimationCounter;
 	float m_MaxAnimation;
-	
+
 	Status m_ChangedState;
 	void ResetFrame();
 	void UpdateAnimation();

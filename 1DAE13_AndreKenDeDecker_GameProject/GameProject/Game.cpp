@@ -14,13 +14,26 @@ Game::~Game( )
 
 void Game::Initialize( )
 {
-	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().bottom, GetViewPort().height / 4.f }, 200.f, 300.f);
+	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().left, GetViewPort().height / 4.f }, 150.f, 225.f); // 150.f, 225.f
+
+	m_ptrMap = new Texture("Level1_Sprite.png");
+
+	m_ptrCamera = new Camera(GetViewPort().width, GetViewPort().height);
+
+	m_ptrTestEnemy = new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f }, 150.f, 225.f);
 }
 
 void Game::Cleanup( )
 {
 	delete m_ptrPlayer;
 	m_ptrPlayer = nullptr;
+	delete m_ptrMap;
+	m_ptrMap = nullptr;
+	delete m_ptrCamera;
+	m_ptrCamera = nullptr;
+	
+	delete m_ptrTestEnemy;
+	m_ptrTestEnemy = nullptr;
 }
 
 void Game::Update( float elapsedSec )
@@ -28,17 +41,46 @@ void Game::Update( float elapsedSec )
 	PlayeMove(elapsedSec);
 
 	m_ptrPlayer->Update(elapsedSec);
+
+	m_ptrTestEnemy->Update(elapsedSec);
+
+	//std::cout << "X Position: " << m_ptrPlayer->GetPosition().x << std::endl;
+	//std::cout << "Y Position: " << m_ptrPlayer->GetPosition().y << std::endl;
 }
 
 void Game::Draw( ) const
 {
 	ClearBackground( );
+
+	Rectf dstRectfMap{ 0.f, 0.f, m_ptrMap->GetWidth() * 3.3f, GetViewPort().height * 1.3f };
+	Rectf srcRectMap{ 10.f, -63.f, m_ptrMap->GetWidth(), 280.f };
+
+	//Camera
+	m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, m_ptrPlayer->GetPosition());
+
+	//Draw Map
+	m_ptrMap->Draw(dstRectfMap, srcRectMap);
+
+	//Draw Player
+	m_ptrPlayer->TranslateSprite();
 	m_ptrPlayer->Draw();
+	m_ptrPlayer->ResetSprite();
+
+	//Draw Enemy
+	m_ptrTestEnemy->TranslateSprite();
+	m_ptrTestEnemy->Draw();
+	m_ptrTestEnemy->ResetSprite();
+
+	m_ptrCamera->Reset();
 }
 
 void Game::ProcessKeyDownEvent( const SDL_KeyboardEvent & e )
 {
 	//std::cout << "KEYDOWN event: " << e.keysym.sym << std::endl;
+	//if(e.keysym.sym == SDLK_s)
+	//{
+	//	m_ScaleTest = !m_ScaleTest;
+	//}
 }
 
 void Game::ProcessKeyUpEvent( const SDL_KeyboardEvent& e )
@@ -110,7 +152,11 @@ void Game::PlayeMove(float elapsedSec)
 	// Check keyboard state
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
-	if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_UP])
+	if(pStates[SDL_SCANCODE_J])
+	{
+		m_ptrPlayer->Attack(true);
+	}
+	else if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_UP])
 	{
 		m_ptrPlayer->Move(elapsedSec, true, false, true);
 	}
@@ -142,7 +188,7 @@ void Game::PlayeMove(float elapsedSec)
 	{
 		m_ptrPlayer->Move(elapsedSec, false, false, true);
 	}
-	else
+	else if (m_ptrPlayer->CheckIdle())
 	{
 		m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::Idle;
 	}

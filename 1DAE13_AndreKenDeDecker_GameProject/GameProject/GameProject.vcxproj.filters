@@ -30,6 +30,12 @@
     <ClCompile Include="ScottPilgrim.cpp">
       <Filter>Source Files\MyClasses</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files\MyClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyMike.cpp">
+      <Filter>Source Files\MyClasses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h">
@@ -39,6 +45,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ScottPilgrim.h">
+      <Filter>Source Files\MyClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Source Files\MyClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyMike.h">
       <Filter>Source Files\MyClasses</Filter>
     </ClInclude>
   </ItemGroup>

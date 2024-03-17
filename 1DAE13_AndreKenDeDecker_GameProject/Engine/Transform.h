@@ -9,7 +9,7 @@ public:
 	{
 		glPushMatrix();
 		glTranslatef(Position.x, Position.y, 0);
-		glRotatef(Rotation, 0, 0, 1);
+		glRotatef(Rotation.x, 0, 0, 1);
 		glScalef(Scale.x, Scale.y, 1);
 	}
 
@@ -19,6 +19,6 @@ public:
 	}
 
 	Vector2f Position{};
-	float Rotation{};
+	Vector2f Rotation{};
 	Vector2f Scale{ 1.f, 1.f };
 };
