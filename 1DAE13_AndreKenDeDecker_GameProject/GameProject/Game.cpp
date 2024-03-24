@@ -14,13 +14,13 @@ Game::~Game( )
 
 void Game::Initialize( )
 {
-	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().left, GetViewPort().height / 4.f }, 150.f, 225.f); // 150.f, 225.f
+	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().left, GetViewPort().height / 4.f }, 300.f, 225.f); // 150.f, 225.f
 
 	m_ptrMap = new Texture("Level1_Sprite.png");
 
 	m_ptrCamera = new Camera(GetViewPort().width, GetViewPort().height);
 
-	m_ptrTestEnemy = new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f }, 150.f, 225.f);
+	m_ptrTestEnemy = new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f }, 300.f, 225.f);
 }
 
 void Game::Cleanup( )
@@ -38,11 +38,28 @@ void Game::Cleanup( )
 
 void Game::Update( float elapsedSec )
 {
-	PlayeMove(elapsedSec);
+	PlayeKeys(elapsedSec);
 
+	/*m_ptrPlayer->CheckKeys(elapsedSec, true);*/
 	m_ptrPlayer->Update(elapsedSec);
+	
 
 	m_ptrTestEnemy->Update(elapsedSec);
+
+	if(m_ptrPlayer->CheckIfHitboxIsOn())
+	{
+		m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
+		if (m_PlayerAttacked)
+		{
+			m_ptrPlayer->LightAttackCounter(m_ptrTestEnemy->GetIsDamaged());
+			m_PlayerAttacked = false;
+		}
+	}
+
+	if(m_ptrTestEnemy->CheckIdle())
+	{
+		m_ptrTestEnemy->m_EnemyStatus = EnemyMike::Status::Idle;
+	}
 
 	//std::cout << "X Position: " << m_ptrPlayer->GetPosition().x << std::endl;
 	//std::cout << "Y Position: " << m_ptrPlayer->GetPosition().y << std::endl;
@@ -56,32 +73,42 @@ void Game::Draw( ) const
 	Rectf srcRectMap{ 10.f, -63.f, m_ptrMap->GetWidth(), 280.f };
 
 	//Camera
-	m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, m_ptrPlayer->GetPosition());
+	m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, Point2f{ m_ptrPlayer->GetPosition().x + m_ptrPlayer->GetWidth() / 2.f , m_ptrPlayer->GetPosition().y });
 
 	//Draw Map
 	m_ptrMap->Draw(dstRectfMap, srcRectMap);
 
-	//Draw Player
-	m_ptrPlayer->TranslateSprite();
-	m_ptrPlayer->Draw();
-	m_ptrPlayer->ResetSprite();
+	if(m_ptrPlayer->GetPosition().y - 20.f <= m_ptrTestEnemy->GetPosition().y)
+	{
+		//Draw Enemy
+		m_ptrTestEnemy->Draw();
 
-	//Draw Enemy
-	m_ptrTestEnemy->TranslateSprite();
-	m_ptrTestEnemy->Draw();
-	m_ptrTestEnemy->ResetSprite();
+		//Draw Player
+		m_ptrPlayer->Draw();
+	}
+	else
+	{
+		//Draw Player
+		m_ptrPlayer->Draw();
+
+		//Draw Enemy
+		m_ptrTestEnemy->Draw();
+	}
+
+	
 
 	m_ptrCamera->Reset();
 }
 
-void Game::ProcessKeyDownEvent( const SDL_KeyboardEvent & e )
+void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 {
-	//std::cout << "KEYDOWN event: " << e.keysym.sym << std::endl;
-	//if(e.keysym.sym == SDLK_s)
-	//{
-	//	m_ScaleTest = !m_ScaleTest;
-	//}
+	if (e.keysym.sym == SDLK_j)
+	{
+		m_ptrPlayer->Attack(true);
+		m_PlayerAttacked = true;
+	}
 }
+
 
 void Game::ProcessKeyUpEvent( const SDL_KeyboardEvent& e )
 {
@@ -147,46 +174,47 @@ void Game::ClearBackground( ) const
 	glClear( GL_COLOR_BUFFER_BIT );
 }
 
-void Game::PlayeMove(float elapsedSec)
+void Game::PlayeKeys(float elapsedSec)
 {
-	// Check keyboard state
+	 /*Check keyboard state*/
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
-	if(pStates[SDL_SCANCODE_J])
+	/*if(pStates[SDL_SCANCODE_J])
 	{
 		m_ptrPlayer->Attack(true);
-	}
-	else if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_UP])
+		m_ptrPlayer->LightAttackCounter(m_ptrTestEnemy->GetIsDamaged());
+	}*/
+	if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_UP])
 	{
-		m_ptrPlayer->Move(elapsedSec, true, false, true);
+		m_ptrPlayer->CheckKeys(elapsedSec, true, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_DOWN])
 	{
-		m_ptrPlayer->Move(elapsedSec, true, false, false, true);
+		m_ptrPlayer->CheckKeys(elapsedSec, true, false, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_UP])
 	{
-		m_ptrPlayer->Move(elapsedSec, false, true, true);
+		m_ptrPlayer->CheckKeys(elapsedSec, false, true, true);
 	}
 	else if (pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_DOWN])
 	{
-		m_ptrPlayer->Move(elapsedSec, false, true, false, true);
+		m_ptrPlayer->CheckKeys(elapsedSec, false, true, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_RIGHT])
 	{
-		m_ptrPlayer->Move(elapsedSec, true, false);
+		m_ptrPlayer->CheckKeys(elapsedSec, true, false);
 	}
 	else if (pStates[SDL_SCANCODE_LEFT])
 	{
-		m_ptrPlayer->Move(elapsedSec, false, true);
+		m_ptrPlayer->CheckKeys(elapsedSec, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_DOWN])
 	{
-		m_ptrPlayer->Move(elapsedSec, false, false, false, true);
+		m_ptrPlayer->CheckKeys(elapsedSec, false, false, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_UP])
 	{
-		m_ptrPlayer->Move(elapsedSec, false, false, true);
+		m_ptrPlayer->CheckKeys(elapsedSec, false, false, true);
 	}
 	else if (m_ptrPlayer->CheckIdle())
 	{

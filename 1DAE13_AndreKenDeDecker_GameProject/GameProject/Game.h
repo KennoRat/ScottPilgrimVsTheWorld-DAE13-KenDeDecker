@@ -32,9 +32,11 @@ private:
 	void Initialize();
 	void Cleanup( );
 	void ClearBackground( ) const;
-	void PlayeMove(float elapsedSec);
+	void PlayeKeys(float elapsedSec);
 
 	//Variables
+	bool m_PlayerAttacked{false};
+
 	ScottPilgrim* m_ptrPlayer;
 	Texture* m_ptrMap;
 	Camera* m_ptrCamera;
