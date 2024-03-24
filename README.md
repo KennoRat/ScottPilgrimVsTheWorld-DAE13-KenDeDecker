@@ -47,6 +47,7 @@
 ## About The Project
 
 TODO: add screenshot 
+![](https://github.com/HowestDAE/DAE13-KennoRat/blob/main/ScottVSWorld.jpg)
 
 Here's why:
 TODO: describe why you chose this game 
