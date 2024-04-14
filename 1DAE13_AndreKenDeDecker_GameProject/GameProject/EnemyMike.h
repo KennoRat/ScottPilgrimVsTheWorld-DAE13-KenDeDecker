@@ -23,8 +23,9 @@ public:
 	bool GetIsDamaged() const;
 	bool GetIsColliding() const;
 	int GetHealth() const;
-
 	Point2f GetPosition() const;
+
+	void SetIsLeft(bool IsLeft);
 
 	enum class Status
 	{
@@ -34,6 +35,7 @@ public:
 	Status m_EnemyStatus;
 
 private:
+	//Variables
 	bool m_IsAlive;
 	bool m_IsAttacking;
 	bool m_IsDamaged;
@@ -42,8 +44,10 @@ private:
 	bool m_IsLeft;
 	bool m_IsFalling;
 	bool m_IsGettingUp;
+	bool m_IsMoving;
 	Point2f m_Position;
 	Point2f m_InitialJumpPosition;
+	Point2f m_NewPosition;
 	float m_Width;
 	float m_Height;
 	int m_Health;
@@ -54,11 +58,20 @@ private:
 	float m_AnimationCounter;
 	float m_MaxAnimation;
 
+	//Time
+	float m_MovingDelayCounter;
+	float m_MaxMovingDelay;
+
+	//Arrays
 	std::vector<Point2f> m_HitboxOnOrigin;
 	std::vector<Point2f> m_HitboxTransformed;
 	utils::HitInfo m_Hitinfo;
 	Status m_ChangedState;
+
+	//Functions
 	void ResetFrame();
 	void UpdateAnimation();
+	void UpdateMovingDelay();
+	void GoToRandomPosition(float elapsedSec);
 };
 

@@ -33,7 +33,7 @@ ScottPilgrim::ScottPilgrim(Point2f position, float width, float height): m_Posit
 
 	// Make Player Hitbox
 	float HitboxWidthLeft{m_Width / 2.f};
-	float HitboxHeight{m_Height - m_Height/6.f};
+	float HitboxHeight{m_Height - m_Height/4.f};
 	m_PlayerHitboxOnOrigin.push_back(Point2f(HitboxWidthLeft, 0.f));
 	m_PlayerHitboxOnOrigin.push_back(Point2f(0.f, 0.f));
 	m_PlayerHitboxOnOrigin.push_back(Point2f(0.f, HitboxHeight));
@@ -42,8 +42,8 @@ ScottPilgrim::ScottPilgrim(Point2f position, float width, float height): m_Posit
 	// Make Attack Hitbox
 	float AttackboxWidthLeft{ m_Width / 4.f };
 	float AttackboxHeightBot{ m_Height / 3.f };
-	float AttackboxWidth{ m_Width / 4.f * 3.f};
-	float AttackboxHeight{m_Height - m_Height / 2.5f };
+	float AttackboxWidth{ m_Width / 3.f * 2.f};
+	float AttackboxHeight{m_Height - m_Height / 2.f };
 	m_AttackBoxOnOrigin.push_back(Point2f(AttackboxWidth, AttackboxHeightBot));
 	m_AttackBoxOnOrigin.push_back(Point2f(AttackboxWidthLeft, AttackboxHeightBot));
 	m_AttackBoxOnOrigin.push_back(Point2f(AttackboxWidthLeft, AttackboxHeight));

@@ -79,7 +79,7 @@ private:
 	float m_JumpDelayCounter;
 	const float m_MAX_JUMP_DELAY{ 0.15f };
 	float m_RunningDelayCounter;
-	const float m_MAX_RUNNING_DELAY{ 0.3f };
+	const float m_MAX_RUNNING_DELAY{ 0.35f };
 	
 	// Arrays
 	std::vector<Point2f> m_PlayerHitboxOnOrigin;

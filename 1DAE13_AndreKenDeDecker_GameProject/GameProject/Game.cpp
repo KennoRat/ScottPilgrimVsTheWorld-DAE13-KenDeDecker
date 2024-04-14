@@ -71,8 +71,12 @@ void Game::Update( float elapsedSec )
 		}
 	}
 
+	
+
 	if(m_ptrTestEnemy->CheckIdle())
 	{
+		if (m_ptrPlayer->GetPosition().x > m_ptrTestEnemy->GetPosition().x) m_ptrTestEnemy->SetIsLeft(false);
+		else m_ptrTestEnemy->SetIsLeft(true);
 		m_ptrTestEnemy->m_EnemyStatus = EnemyMike::Status::Idle;
 	}
 
@@ -157,17 +161,17 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 		else m_ptrPlayer->Jump();
 	}
 
-	if((e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_q) && m_PlayerResetRunRight && m_PlayerResetRunLeft)
+	if((e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT || e.keysym.sym == SDLK_RIGHT) && m_PlayerResetRunRight && m_PlayerResetRunLeft)
 	{
 		if (m_ptrPlayer->GetIsRunningTrigger() == true && m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::Idle)
 		{
-			if (e.keysym.sym == SDLK_d) m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::RunningRight;
-			else if (e.keysym.sym == SDLK_q)m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::RunningLeft;
+			if (e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_RIGHT) m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::RunningRight;
+			else if (e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT)m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::RunningLeft;
 		}
 		else
 		{
-			if (e.keysym.sym == SDLK_d) m_PlayerResetRunRight = false;
-			else if (e.keysym.sym == SDLK_q) m_PlayerResetRunLeft = false;
+			if (e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_RIGHT) m_PlayerResetRunRight = false;
+			else if (e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT) m_PlayerResetRunLeft = false;
 			
 			m_ptrPlayer->SetIsRunningTrigger(true);
 			//std::cout << "Running trigger is true" << std::endl;
@@ -182,9 +186,9 @@ void Game::ProcessKeyUpEvent( const SDL_KeyboardEvent& e )
 
 	if (e.keysym.sym == SDLK_k) m_PlayerResetHeavyAttackButton = true;
 
-	if (e.keysym.sym == SDLK_d) m_PlayerResetRunRight = true;
+	if (e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_RIGHT) m_PlayerResetRunRight = true;
 
-	if (e.keysym.sym == SDLK_q) m_PlayerResetRunLeft = true;
+	if (e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT) m_PlayerResetRunLeft = true;
 
 	//std::cout << "KEYUP event: " << e.keysym.sym << std::endl;
 	//switch ( e.keysym.sym )

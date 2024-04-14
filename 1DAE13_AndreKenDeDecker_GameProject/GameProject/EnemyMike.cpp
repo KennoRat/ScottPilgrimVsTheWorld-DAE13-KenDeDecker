@@ -7,29 +7,34 @@ EnemyMike::EnemyMike(Point2f position, float width, float height): m_Position{po
 	m_IsAttacking = false;
 	m_IsDamaged = false;
 	m_IsColliding = false;
-	m_IsLeft = true;
+	m_IsLeft = false;
 	m_IsFalling = false;
 	m_IsOnTheGround = false;
 	m_IsGettingUp = false;
-	m_Health = 5;
+	m_IsMoving = false;
+	m_Health = 10;
 	m_Velocity = Vector2f{ 200.f, 150.f };
 	m_FrameNR = 0.f;
 	m_InitialJumpPosition = Point2f{0.f, 0.f};
 	m_AnimationCounter = 0.f;
 	m_MaxAnimation = 0.09f;
 	m_MaxFrame = 7.f;
+
+	m_MovingDelayCounter = 0.f;
+	m_MaxMovingDelay = 3.f;
+
 	m_ptrSpriteSheet = new Texture("EnemyMike_Sprite.png");
 	m_ChangedState = Status::Idle;
 	m_EnemyStatus = Status::Idle;
 
 
 	// Make Enemy Hitbox
-	float HitboxWidthLeft{ m_Width / 3.f};
+	float HitboxWidth{ m_Width / 2.f};
 	float HitboxHeight{ m_Height - m_Height / 6.f };
-	m_HitboxOnOrigin.push_back(Point2f(m_Width, 0.f));
-	m_HitboxOnOrigin.push_back(Point2f(HitboxWidthLeft, 0.f));
-	m_HitboxOnOrigin.push_back(Point2f(HitboxWidthLeft, HitboxHeight));
-	m_HitboxOnOrigin.push_back(Point2f(m_Width, HitboxHeight));
+	m_HitboxOnOrigin.push_back(Point2f(0.f,0.f));
+	m_HitboxOnOrigin.push_back(Point2f(HitboxWidth, 0.f));
+	m_HitboxOnOrigin.push_back(Point2f(HitboxWidth, HitboxHeight));
+	m_HitboxOnOrigin.push_back(Point2f(0.f, HitboxHeight));
 }
 
 EnemyMike::~EnemyMike()
@@ -66,6 +71,16 @@ void EnemyMike::Update(float elapsedSec)
 	case EnemyMike::Status::Idle:
 		m_MaxFrame = 3.f;
 		m_MaxAnimation = 0.09f;
+		UpdateAnimation();
+
+		if(m_IsMoving == false)
+		{
+			m_MovingDelayCounter += elapsedSec;
+			UpdateMovingDelay();
+		}
+		break;
+	case EnemyMike::Status::Walking:
+		m_MaxFrame = 5.f;
 		UpdateAnimation();
 		break;
 	case EnemyMike::Status::Hit:
@@ -135,7 +150,17 @@ void EnemyMike::Update(float elapsedSec)
 	Matrix2x3 TranslationMat{};
 	TranslationMat.SetAsTranslate(Vector2f(m_Position));
 
-	m_HitboxTransformed = TranslationMat.Transform(m_HitboxOnOrigin);
+	if(m_IsLeft)
+	{
+		TranslationMat.SetAsTranslate(Vector2f(m_Position.x + m_Width / 2.f, m_Position.y));
+		Matrix2x3 ScaleMat{};
+		ScaleMat.SetAsScale(-1.f, 1.f);
+		Matrix2x3 TransformMat{ TranslationMat * ScaleMat };
+		m_HitboxTransformed = TransformMat.Transform(m_HitboxOnOrigin);
+	}
+	else m_HitboxTransformed = TranslationMat.Transform(m_HitboxOnOrigin);
+
+	if (m_IsMoving) GoToRandomPosition(elapsedSec);
 }
 
 void EnemyMike::UpdateAnimation()
@@ -170,6 +195,52 @@ void EnemyMike::UpdateAnimation()
 	}
 }
 
+void EnemyMike::UpdateMovingDelay()
+{
+	if(m_MovingDelayCounter >= m_MaxMovingDelay)
+	{
+		int MoveDistance{500};
+
+		m_IsMoving = true;
+		m_NewPosition.x = float(rand() % MoveDistance - MoveDistance / 2) + m_Position.x;
+		m_NewPosition.y = float(rand() % MoveDistance - MoveDistance / 2) + m_Position.y;
+		m_EnemyStatus = Status::Walking;
+		m_MovingDelayCounter -= m_MaxMovingDelay;
+		m_MaxMovingDelay = float(rand() % 5 + 3);
+
+		std::cout << "Moving Is True" << std::endl;
+	}
+}
+
+void EnemyMike::GoToRandomPosition(float elapsedSec)
+{
+	if (m_NewPosition.x < m_Position.x + 2.f && m_NewPosition.x > m_Position.x - 2.f) m_NewPosition.x = m_Position.x;
+	else if (m_NewPosition.x > m_Position.x) m_Position.x += m_Velocity.x * elapsedSec;
+	else if (m_NewPosition.x < m_Position.x) m_Position.x -= m_Velocity.x * elapsedSec;
+	
+
+	if(m_NewPosition.y < m_Position.y + 2.f && m_NewPosition.y > m_Position.y - 2.f) m_NewPosition.y = m_Position.y;
+	else if (m_NewPosition.y > m_Position.y) m_Position.y += m_Velocity.y * elapsedSec;
+	else if (m_NewPosition.y < m_Position.y) m_Position.y -= m_Velocity.y * elapsedSec;
+	
+	if (m_Position.y <= -3.0f)
+	{
+		m_NewPosition.y = -3.0f;
+		m_Position.y = -3.0f;
+	}
+	else if (m_Position.y >= 430.0f)
+	{
+		m_NewPosition.y = 430.0f;
+		m_Position.y = 430.0f;
+	}
+
+	if (m_NewPosition.x == m_Position.x && m_NewPosition.y == m_Position.y)
+	{
+		m_IsMoving = false;
+		m_FrameNR = 0.f;
+	}
+}
+
 void EnemyMike::TranslateSprite() const
 {
 	glPushMatrix();
@@ -177,7 +248,7 @@ void EnemyMike::TranslateSprite() const
 
 	if (m_IsLeft)
 	{
-		glTranslatef(m_Position.x + m_Width, m_Position.y, 0.f);
+		glTranslatef(m_Position.x + m_Width/2.f, m_Position.y, 0.f);
 		glScalef(-1.f, 1.f, 0.f);
 	}
 	else
@@ -246,7 +317,7 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheck
 
 bool EnemyMike::CheckIdle() const
 {
-	if (m_IsAttacking || m_IsDamaged || m_IsFalling || m_IsOnTheGround || m_IsAlive == false || m_IsGettingUp)
+	if (m_IsAttacking || m_IsDamaged || m_IsFalling || m_IsOnTheGround || m_IsAlive == false || m_IsGettingUp || m_IsMoving)
 	{
 		return false;
 	}
@@ -274,6 +345,11 @@ int EnemyMike::GetHealth() const
 Point2f EnemyMike::GetPosition() const
 {
 	return m_Position;
+}
+
+void EnemyMike::SetIsLeft(bool IsLeft)
+{
+	m_IsLeft = IsLeft;
 }
 
 void EnemyMike::ResetFrame()
