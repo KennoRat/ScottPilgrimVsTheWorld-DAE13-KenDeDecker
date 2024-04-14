@@ -35,7 +35,14 @@ private:
 	void PlayeKeys(float elapsedSec);
 
 	//Variables
-	bool m_PlayerAttacked{false};
+	bool m_PlayerLightAttacked{false};
+	bool m_PlayerResetLightAttackButton{false};
+
+	bool m_PlayerHeavyAttacked{ false };
+	bool m_PlayerResetHeavyAttackButton{ false };
+
+	bool m_PlayerResetRunLeft{true};
+	bool m_PlayerResetRunRight{ true };
 
 	ScottPilgrim* m_ptrPlayer;
 	Texture* m_ptrMap;
