@@ -106,8 +106,13 @@ Use this space to show useful examples of how a game can be played.
 Additional screenshots and demos work well in this space. 
 
 ### Controls
-* keys, .. 
-* .. 
+* Movement: WASD or Arrow keys
+* Jump: Space
+* Sprint: double tap Left or Right Movement
+* Light Attack: J 
+* Heavy Attack: K
+* JumpKick: J during jump
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -150,7 +155,7 @@ Explain where you applied inheritance (mandatory).
 <!-- CONTACT -->
 ## Contact
 
-Your Name - email@student.howest.be
+Your Name - ken.de.decker@student.howest.be
 
 Project Link: [https://github.com/your_username/repo_name](https://github.com/your_username/repo_name)
 
