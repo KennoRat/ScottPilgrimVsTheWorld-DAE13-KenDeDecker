@@ -12,6 +12,9 @@ EnemyMike::EnemyMike(Point2f position, float width, float height): m_Position{po
 	m_IsOnTheGround = false;
 	m_IsGettingUp = false;
 	m_IsMoving = false;
+	m_IsAttackBoxOn = false;
+	m_AttackBoxReset = false;
+	m_IsTaunting = false;
 	m_Health = 10;
 	m_Velocity = Vector2f{ 200.f, 150.f };
 	m_FrameNR = 0.f;
@@ -20,8 +23,8 @@ EnemyMike::EnemyMike(Point2f position, float width, float height): m_Position{po
 	m_MaxAnimation = 0.09f;
 	m_MaxFrame = 7.f;
 
-	m_MovingDelayCounter = 0.f;
-	m_MaxMovingDelay = 3.f;
+	m_ChoicesDelayCounter = 0.f;
+	m_MaxChoicesDelay = 3.f;
 
 	m_ptrSpriteSheet = new Texture("EnemyMike_Sprite.png");
 	m_ChangedState = Status::Idle;
@@ -35,6 +38,16 @@ EnemyMike::EnemyMike(Point2f position, float width, float height): m_Position{po
 	m_HitboxOnOrigin.push_back(Point2f(HitboxWidth, 0.f));
 	m_HitboxOnOrigin.push_back(Point2f(HitboxWidth, HitboxHeight));
 	m_HitboxOnOrigin.push_back(Point2f(0.f, HitboxHeight));
+
+	// Make Attackbox
+	float AttackboxWidthLeft{ m_Width / 4.f };
+	float AttackboxHeightBot{ m_Height / 3.f };
+	float AttackboxWidth{ m_Width / 3.f * 2.f };
+	float AttackboxHeight{ m_Height - m_Height / 2.f };
+	m_AttackBoxOnOrigin.push_back(Point2f(AttackboxWidth, AttackboxHeightBot));
+	m_AttackBoxOnOrigin.push_back(Point2f(AttackboxWidthLeft, AttackboxHeightBot));
+	m_AttackBoxOnOrigin.push_back(Point2f(AttackboxWidthLeft, AttackboxHeight));
+	m_AttackBoxOnOrigin.push_back(Point2f(AttackboxWidth, AttackboxHeight));
 }
 
 EnemyMike::~EnemyMike()
@@ -46,7 +59,7 @@ EnemyMike::~EnemyMike()
 void EnemyMike::Draw() const
 {
 	float CollumnWidth{ m_ptrSpriteSheet->GetWidth() / 8.f};
-	float RowHeigth = m_ptrSpriteSheet->GetHeight() / 9.f;
+	float RowHeigth = m_ptrSpriteSheet->GetHeight() / 12.f;
 	float RowIndex = float(m_EnemyStatus);
 
 	Rectf srcRect = Rectf{ m_FrameNR * CollumnWidth, RowHeigth * RowIndex, CollumnWidth, RowHeigth - 1.f };
@@ -58,9 +71,12 @@ void EnemyMike::Draw() const
 
 	utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
 	utils::DrawPolygon(m_HitboxTransformed);
+
+	utils::SetColor(Color4f(1.0f, 0.0f, 0, 1.0f));
+	utils::DrawPolygon(m_AttackBoxTransformed);
 }
 
-void EnemyMike::Update(float elapsedSec)
+void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition)
 {
 	m_AnimationCounter += elapsedSec;
 
@@ -75,8 +91,8 @@ void EnemyMike::Update(float elapsedSec)
 
 		if(m_IsMoving == false)
 		{
-			m_MovingDelayCounter += elapsedSec;
-			UpdateMovingDelay();
+			m_ChoicesDelayCounter += elapsedSec;
+			UpdateChoicesDelay(PlayerPosition);
 		}
 		break;
 	case EnemyMike::Status::Walking:
@@ -144,6 +160,53 @@ void EnemyMike::Update(float elapsedSec)
 		UpdateAnimation();
 
 		break;
+	case EnemyMike::Status::LightAttack:
+
+		m_MaxFrame = 7.f;
+		m_MaxAnimation = 0.09f;
+		UpdateAnimation();
+
+		if (m_FrameNR == 1.f || m_FrameNR == 5.f)
+		{
+			m_IsAttackBoxOn = true;
+		}
+		else
+		{
+			m_AttackBoxReset = true;
+			m_IsAttackBoxOn = false;
+		}
+		break;
+
+	case EnemyMike::Status::Sprinting:
+
+		m_MaxFrame = 7.f;
+		m_MaxAnimation = 0.09f;
+		UpdateAnimation();
+		break;
+
+	case EnemyMike::Status::Taunt:
+
+		m_MaxFrame = 3.f;
+		m_MaxAnimation = 0.20f;
+		UpdateAnimation();
+
+		break;
+
+	case EnemyMike::Status::SpinKick:
+		m_MaxFrame = 6.f;
+		m_MaxAnimation = 0.09f;
+		UpdateAnimation();
+
+		if (m_FrameNR == 3.f)
+		{
+			m_IsAttackBoxOn = true;
+		}
+		else
+		{
+			m_AttackBoxReset = true;
+			m_IsAttackBoxOn = false;
+		}
+		break;
 	}
 
 	// Transform Hitboxes
@@ -160,6 +223,16 @@ void EnemyMike::Update(float elapsedSec)
 	}
 	else m_HitboxTransformed = TranslationMat.Transform(m_HitboxOnOrigin);
 
+	if (m_IsLeft)
+	{
+		TranslationMat.SetAsTranslate(Vector2f(m_Position.x + m_Width / 2.f, m_Position.y));
+		Matrix2x3 ScaleMat{};
+		ScaleMat.SetAsScale(-1.f, 1.f);
+		Matrix2x3 TransformMat{ TranslationMat * ScaleMat };
+		m_AttackBoxTransformed = TransformMat.Transform(m_AttackBoxOnOrigin);
+	}
+	else m_AttackBoxTransformed = TranslationMat.Transform(m_AttackBoxOnOrigin);
+
 	if (m_IsMoving) GoToRandomPosition(elapsedSec);
 }
 
@@ -174,10 +247,11 @@ void EnemyMike::UpdateAnimation()
 		else
 		{
 			m_FrameNR = 0.f;
-			m_IsAttacking = false;
 			m_IsDamaged = false;
 			m_IsColliding = false;
 			m_IsGettingUp = false;
+			m_IsAttacking = false;
+			m_IsTaunting = false;
 
 			if (m_IsAlive == false && m_EnemyStatus == Status::OnTheGround)
 			{
@@ -195,33 +269,66 @@ void EnemyMike::UpdateAnimation()
 	}
 }
 
-void EnemyMike::UpdateMovingDelay()
+void EnemyMike::UpdateChoicesDelay(const Point2f& PlayerPosition)
 {
-	if(m_MovingDelayCounter >= m_MaxMovingDelay)
+	if(m_ChoicesDelayCounter >= m_MaxChoicesDelay)
 	{
-		int MoveDistance{500};
+		int RandomChoice{ rand() % 3 };
 
-		m_IsMoving = true;
-		m_NewPosition.x = float(rand() % MoveDistance - MoveDistance / 2) + m_Position.x;
-		m_NewPosition.y = float(rand() % MoveDistance - MoveDistance / 2) + m_Position.y;
-		m_EnemyStatus = Status::Walking;
-		m_MovingDelayCounter -= m_MaxMovingDelay;
-		m_MaxMovingDelay = float(rand() % 5 + 3);
+		if(RandomChoice == 0)
+		{
+			int MoveDistance{ 500 };
 
-		std::cout << "Moving Is True" << std::endl;
+			m_IsMoving = true;
+			m_NewPosition.x = float(rand() % MoveDistance - MoveDistance / 2) + m_Position.x;
+			m_NewPosition.y = float(rand() % MoveDistance - MoveDistance / 2) + m_Position.y;
+			m_EnemyStatus = Status::Walking;
+		}
+		else if(RandomChoice == 1)
+		{
+			int MoveDistance{ 500 };
+			float PlayerDistance{ 180.f };
+
+			m_IsMoving = true;
+			if(m_Position.x < PlayerPosition.x) m_NewPosition.x = PlayerPosition.x - PlayerDistance;
+			else m_NewPosition.x = PlayerPosition.x + PlayerDistance;
+			m_NewPosition.y = PlayerPosition.y;
+			m_EnemyStatus = Status::Sprinting;
+		}
+		else if(RandomChoice == 2)
+		{
+			m_FrameNR = 0.f;
+			m_IsTaunting = true;
+			m_EnemyStatus = Status::Taunt;
+		}
+
+
+
+		m_ChoicesDelayCounter -= m_MaxChoicesDelay;
+		m_MaxChoicesDelay = float(rand() % 5 + 3);
+		//std::cout << "Moving Is True" << std::endl;
 	}
 }
 
 void EnemyMike::GoToRandomPosition(float elapsedSec)
 {
+	Vector2f Speed{};
+
+	if (m_EnemyStatus == Status::Sprinting)
+	{
+		Speed.x = 2.f * m_Velocity.x;
+		Speed.y = 2.f * m_Velocity.y;
+	}
+	else Speed = m_Velocity;
+
 	if (m_NewPosition.x < m_Position.x + 2.f && m_NewPosition.x > m_Position.x - 2.f) m_NewPosition.x = m_Position.x;
-	else if (m_NewPosition.x > m_Position.x) m_Position.x += m_Velocity.x * elapsedSec;
-	else if (m_NewPosition.x < m_Position.x) m_Position.x -= m_Velocity.x * elapsedSec;
+	else if (m_NewPosition.x > m_Position.x) m_Position.x += Speed.x * elapsedSec;
+	else if (m_NewPosition.x < m_Position.x) m_Position.x -= Speed.x * elapsedSec;
 	
 
 	if(m_NewPosition.y < m_Position.y + 2.f && m_NewPosition.y > m_Position.y - 2.f) m_NewPosition.y = m_Position.y;
-	else if (m_NewPosition.y > m_Position.y) m_Position.y += m_Velocity.y * elapsedSec;
-	else if (m_NewPosition.y < m_Position.y) m_Position.y -= m_Velocity.y * elapsedSec;
+	else if (m_NewPosition.y > m_Position.y) m_Position.y += Speed.y * elapsedSec;
+	else if (m_NewPosition.y < m_Position.y) m_Position.y -= Speed.y * elapsedSec;
 	
 	if (m_Position.y <= -3.0f)
 	{
@@ -236,9 +343,27 @@ void EnemyMike::GoToRandomPosition(float elapsedSec)
 
 	if (m_NewPosition.x == m_Position.x && m_NewPosition.y == m_Position.y)
 	{
+		if (m_EnemyStatus == Status::Sprinting)
+		{
+			int RandomChoice{ rand() % 2 };
+			m_IsAttacking = true;
+			if(RandomChoice == 0)
+			{
+				m_EnemyStatus = Status::LightAttack;
+			}
+			else if(RandomChoice == 1)
+			{
+				m_EnemyStatus = Status::SpinKick;
+			}
+		}
 		m_IsMoving = false;
 		m_FrameNR = 0.f;
 	}
+}
+
+void EnemyMike::Attack(float elapsedSec)
+{
+	ResetFrame();
 }
 
 void EnemyMike::TranslateSprite() const
@@ -282,6 +407,9 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheck
 			{
 				ResetFrame();
 				--m_Health;
+				m_IsMoving = false;
+				m_IsAttacking = false;
+
 				if (m_Health == 0)
 				{
 					const float JUMP_SPEED{ 1000.f };
@@ -295,7 +423,7 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheck
 				else if(GetThrownInTheAir)
 				{
 					const float JUMP_SPEED{ 500.f };
-					const float THROWBACK_SPEED{ 400.f };
+					const float THROWBACK_SPEED{ 800.f };
 					m_EnemyStatus = Status::Falling;
 					m_InitialJumpPosition = m_Position;
 					m_Velocity.y = JUMP_SPEED;
@@ -317,7 +445,7 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheck
 
 bool EnemyMike::CheckIdle() const
 {
-	if (m_IsAttacking || m_IsDamaged || m_IsFalling || m_IsOnTheGround || m_IsAlive == false || m_IsGettingUp || m_IsMoving)
+	if (m_IsAttacking || m_IsDamaged || m_IsFalling || m_IsOnTheGround || m_IsAlive == false || m_IsGettingUp || m_IsMoving || m_IsTaunting)
 	{
 		return false;
 	}
@@ -337,6 +465,11 @@ bool EnemyMike::GetIsColliding() const
 	return m_IsColliding;
 }
 
+bool EnemyMike::GetIsLeft() const
+{
+	return m_IsLeft;
+}
+
 int EnemyMike::GetHealth() const
 {
 	return m_Health;
@@ -345,6 +478,21 @@ int EnemyMike::GetHealth() const
 Point2f EnemyMike::GetPosition() const
 {
 	return m_Position;
+}
+
+bool EnemyMike::CheckIfAttackBoxIsOn()
+{
+	if (m_AttackBoxReset && m_IsAttackBoxOn)
+	{
+		m_AttackBoxReset = false;
+		return true;
+	}
+	else false;
+}
+
+std::vector<Point2f> EnemyMike::GetAttackBox() const
+{
+	return std::vector<Point2f>(m_AttackBoxTransformed);
 }
 
 void EnemyMike::SetIsLeft(bool IsLeft)

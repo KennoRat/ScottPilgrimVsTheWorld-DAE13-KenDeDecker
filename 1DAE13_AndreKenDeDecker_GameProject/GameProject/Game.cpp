@@ -20,7 +20,10 @@ void Game::Initialize( )
 
 	m_ptrCamera = new Camera(GetViewPort().width, GetViewPort().height);
 
-	m_ptrTestEnemy = new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f }, 300.f, 225.f);
+	//m_ptrTestEnemy = new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f }, 300.f, 225.f);
+
+	m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1200.f, GetViewPort().height / 4.f + 200.f}, 300.f, 225.f));
+	m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1200.f, GetViewPort().height / 4.f - 100.f }, 300.f, 225.f));
 }
 
 void Game::Cleanup( )
@@ -32,8 +35,14 @@ void Game::Cleanup( )
 	delete m_ptrCamera;
 	m_ptrCamera = nullptr;
 	
-	delete m_ptrTestEnemy;
-	m_ptrTestEnemy = nullptr;
+	//delete m_ptrTestEnemy;
+	//m_ptrTestEnemy = nullptr;
+
+	for (EnemyMike* Enemies : m_ptrEnemies)
+	{
+		delete Enemies;
+		Enemies = nullptr;
+	}
 }
 
 void Game::Update( float elapsedSec )
@@ -44,44 +53,113 @@ void Game::Update( float elapsedSec )
 	m_ptrPlayer->Update(elapsedSec);
 	
 
-	m_ptrTestEnemy->Update(elapsedSec);
+	//m_ptrTestEnemy->Update(elapsedSec, m_ptrPlayer->GetPosition());
 
-	const float PLAYER_VS_ENEMY_Y_DISTANCE {30.f};
+	//const float PLAYER_VS_ENEMY_Y_DISTANCE {30.f};
 
-	if(m_ptrPlayer->CheckIfHitboxIsOn() && (m_ptrPlayer->GetPosition().y >= m_ptrTestEnemy->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= m_ptrTestEnemy->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
-	{
-		if (m_PlayerLightAttacked)
-		{
-			m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
-			m_ptrPlayer->LightAttackCounterIncrement(m_ptrTestEnemy->GetIsDamaged());
-			m_PlayerLightAttacked = false;
-		}
-		else if(m_PlayerHeavyAttacked)
-		{
-			if(m_ptrPlayer->GetHeavyAttackCounter() == 1) 
-			{
-				m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()) , false, true);
-			}
-			else
-			{
-				m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
-			}
-			m_ptrPlayer->HeavyAttackCounterIncrement(m_ptrTestEnemy->GetIsDamaged());
-			m_PlayerHeavyAttacked = false;
-		}
-	}
+	//if(m_ptrPlayer->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= m_ptrTestEnemy->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= m_ptrTestEnemy->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
+	//{
+	//	//std::cout << "Scott is Hitting" << std::endl;
+	//	if (m_PlayerLightAttacked)
+	//	{
+	//		//std::cout << "Scott is Hitting" << std::endl;
+	//		m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
+	//		m_ptrPlayer->LightAttackCounterIncrement(m_ptrTestEnemy->GetIsDamaged());
+	//		m_PlayerLightAttacked = false;
+	//	}
+	//	else if(m_PlayerHeavyAttacked)
+	//	{
+	//		if(m_ptrPlayer->GetHeavyAttackCounter() == 1) 
+	//		{
+	//			m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()) , false, true);
+	//		}
+	//		else
+	//		{
+	//			m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
+	//		}
+	//		m_ptrPlayer->HeavyAttackCounterIncrement(m_ptrTestEnemy->GetIsDamaged());
+	//		m_PlayerHeavyAttacked = false;
+	//	}
+	//}
 
-	
+	//if(m_ptrTestEnemy->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= m_ptrTestEnemy->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= m_ptrTestEnemy->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
+	//{
+	//	//std::cout << "Enemy is Hitting" << std::endl;
+	//	if (m_ptrTestEnemy->m_EnemyStatus == EnemyMike::Status::LightAttack) m_ptrPlayer->CheckHit(std::vector<Point2f>(m_ptrTestEnemy->GetAttackBox()));
+	//	else if (m_ptrTestEnemy->m_EnemyStatus == EnemyMike::Status::SpinKick) m_ptrPlayer->CheckHit(std::vector<Point2f>(m_ptrTestEnemy->GetAttackBox()), false, true);
+	//}
+	//
 
-	if(m_ptrTestEnemy->CheckIdle())
-	{
-		if (m_ptrPlayer->GetPosition().x > m_ptrTestEnemy->GetPosition().x) m_ptrTestEnemy->SetIsLeft(false);
-		else m_ptrTestEnemy->SetIsLeft(true);
-		m_ptrTestEnemy->m_EnemyStatus = EnemyMike::Status::Idle;
-	}
+	//if(m_ptrTestEnemy->CheckIdle())
+	//{
+	//	if (m_ptrPlayer->GetPosition().x > m_ptrTestEnemy->GetPosition().x) m_ptrTestEnemy->SetIsLeft(false);
+	//	else m_ptrTestEnemy->SetIsLeft(true);
+	//	m_ptrTestEnemy->m_EnemyStatus = EnemyMike::Status::Idle;
+	//}
 
 	//std::cout << "X Position: " << m_ptrPlayer->GetPosition().x << std::endl;
 	//std::cout << "Y Position: " << m_ptrPlayer->GetPosition().y << std::endl;
+
+
+	//Enemies Update
+
+	for (EnemyMike* Enemies : m_ptrEnemies)
+	{
+		Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition());
+
+		const float PLAYER_VS_ENEMY_Y_DISTANCE{ 30.f };
+
+		if (m_ptrPlayer->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
+		{
+			//std::cout << "Scott is Hitting" << std::endl;
+			if (m_PlayerLightAttacked)
+			{
+				//std::cout << "Scott is Hitting" << std::endl;
+				Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
+				m_ptrPlayer->LightAttackCounterIncrement(Enemies->GetIsDamaged());
+
+				if(Enemies == m_ptrEnemies.back())
+				{
+					m_PlayerLightAttacked = false;
+				}
+				
+			}
+			else if (m_PlayerHeavyAttacked)
+			{
+				if (m_ptrPlayer->GetHeavyAttackCounter() == 1)
+				{
+					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), false, true);
+				}
+				else
+				{
+					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
+				}
+
+				m_ptrPlayer->HeavyAttackCounterIncrement(Enemies->GetIsDamaged());
+
+				if (Enemies == m_ptrEnemies.back())
+				{
+					m_PlayerHeavyAttacked = false;
+				}
+			}
+		}
+
+		if (Enemies->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
+		{
+			//std::cout << "Enemy is Hitting" << std::endl;
+			if (Enemies->m_EnemyStatus == EnemyMike::Status::LightAttack) m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft());
+			else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick) m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), false, true);
+		}
+
+
+		if (Enemies->CheckIdle())
+		{
+			if (m_ptrPlayer->GetPosition().x > Enemies->GetPosition().x) Enemies->SetIsLeft(false);
+			else Enemies->SetIsLeft(true);
+			Enemies->m_EnemyStatus = EnemyMike::Status::Idle;
+		}
+	}
+
 }
 
 void Game::Draw( ) const
@@ -97,45 +175,73 @@ void Game::Draw( ) const
 	//Draw Map
 	m_ptrMap->Draw(dstRectfMap, srcRectMap);
 
-	if(m_ptrPlayer->GetPosition().y - 20.f <= m_ptrTestEnemy->GetPosition().y)
-	{
-		//Draw Enemy
-		m_ptrTestEnemy->Draw();
+	//if(m_ptrPlayer->GetPosition().y - 20.f <= m_ptrTestEnemy->GetPosition().y)
+	//{
+	//	//Draw Enemy
+	//	m_ptrTestEnemy->Draw();
 
-		//Draw Player
-		m_ptrPlayer->Draw();
-	}
-	else
-	{
-		//Draw Player
-		m_ptrPlayer->Draw();
+	//	//Draw Player
+	//	m_ptrPlayer->Draw();
+	//}
+	//else
+	//{
+	//	//Draw Player
+	//	m_ptrPlayer->Draw();
 
-		//Draw Enemy
-		m_ptrTestEnemy->Draw();
-	}
+	//	//Draw Enemy
+	//	m_ptrTestEnemy->Draw();
+	//}
+
+	//Enemies Draw
+	//for (EnemyMike* Enemies : m_ptrEnemies)
+	//{
+	//	if (m_ptrPlayer->GetPosition().y - 20.f <= Enemies->GetPosition().y)
+	//	{
+	//		//Draw Enemy
+	//		Enemies->Draw();
+
+	//		//Draw Player
+	//		m_ptrPlayer->Draw();
+	//	}
+	//	else
+	//	{
+	//		//Draw Player
+	//		m_ptrPlayer->Draw();
+
+	//		//Draw Enemy
+	//		Enemies->Draw();
+	//	}
+	//}
+
+	QuicksortDraw();
+
+	//Camera
+	m_ptrCamera->Reset();
 
 	
-
-	m_ptrCamera->Reset();
 }
 
 void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 {
+
 	if(e.keysym.sym == SDLK_j && m_PlayerResetLightAttackButton)
 	{
 		if ( m_ptrPlayer->CheckIdle())
 		{
-			if (m_ptrTestEnemy->GetHealth() == 1 && m_ptrPlayer->GetIsJumping() == false)
+			for (EnemyMike* Enemies : m_ptrEnemies)
 			{
-				m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), true);
-				if (m_ptrTestEnemy->GetIsColliding())
+				if (Enemies->GetHealth() == 1 && m_ptrPlayer->GetIsJumping() == false)
 				{
-					m_ptrPlayer->Attack(false, false, false, true);
+					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), true);
+					if (Enemies->GetIsColliding())
+					{
+						m_ptrPlayer->Attack(false, false, false, true);
+					}
 				}
+				else m_ptrPlayer->Attack(true);
+				m_PlayerLightAttacked = true;
+				m_PlayerResetLightAttackButton = false;
 			}
-			else m_ptrPlayer->Attack(true);
-			m_PlayerLightAttacked = true;
-			m_PlayerResetLightAttackButton = false;
 		}
 		else if (m_ptrPlayer->GetIsJumping())
 		{
@@ -143,8 +249,7 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 		}
 
 	}
-
-	if(e.keysym.sym == SDLK_k && m_PlayerResetHeavyAttackButton)
+	else if(e.keysym.sym == SDLK_k && m_PlayerResetHeavyAttackButton)
 	{
 		if( m_ptrPlayer->CheckIdle())
 		{
@@ -152,6 +257,10 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 			m_PlayerHeavyAttacked = true;
 			m_PlayerResetHeavyAttackButton = false;
 		}
+	}
+	else if (e.keysym.sym == SDLK_l && (m_ptrPlayer->CheckIdle() || m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::Block))
+	{
+		m_ptrPlayer->Block();
 	}
 
 	if (e.keysym.sym == SDLK_SPACE && m_ptrPlayer->CheckIdle())
@@ -189,6 +298,8 @@ void Game::ProcessKeyUpEvent( const SDL_KeyboardEvent& e )
 	if (e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_RIGHT) m_PlayerResetRunRight = true;
 
 	if (e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT) m_PlayerResetRunLeft = true;
+
+	if (e.keysym.sym == SDLK_l && (m_ptrPlayer->CheckIdle() || m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::Block)) m_ptrPlayer->Block(true);
 
 	//std::cout << "KEYUP event: " << e.keysym.sym << std::endl;
 	//switch ( e.keysym.sym )
@@ -298,4 +409,64 @@ void Game::PlayeKeys(float elapsedSec)
 	{
 		m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::Idle;
 	}
+}
+
+void Game::QuicksortDraw() const
+{
+	int AmountOfEneiesAbovePlayerYPosition{};
+	std::vector<EnemyMike*> m_ptrEnemiesAbovePlayer{};
+
+	for (EnemyMike* Enemies : m_ptrEnemies)
+	{
+		if (Enemies->GetPosition().y >= m_ptrPlayer->GetPosition().y)
+		{
+			m_ptrEnemiesAbovePlayer.push_back(Enemies);
+			++AmountOfEneiesAbovePlayerYPosition;
+		}
+	}
+
+	if (AmountOfEneiesAbovePlayerYPosition == 2)
+	{
+		if (m_ptrEnemiesAbovePlayer[0]->GetPosition().y > m_ptrEnemiesAbovePlayer[1]->GetPosition().y)
+		{
+			m_ptrEnemiesAbovePlayer[0]->Draw();
+			m_ptrEnemiesAbovePlayer[1]->Draw();
+		}
+		else
+		{
+			m_ptrEnemiesAbovePlayer[1]->Draw();
+			m_ptrEnemiesAbovePlayer[0]->Draw();
+		}
+	}
+	else if (AmountOfEneiesAbovePlayerYPosition) m_ptrEnemiesAbovePlayer[0]->Draw();
+
+	m_ptrPlayer->Draw();
+
+	int AmountOfEneiesBelowPlayerYPosition{};
+	std::vector<EnemyMike*> m_ptrEnemiesBelowPlayer{};
+
+	for (EnemyMike* Enemies : m_ptrEnemies)
+	{
+		if (Enemies->GetPosition().y < m_ptrPlayer->GetPosition().y)
+		{
+			m_ptrEnemiesBelowPlayer.push_back(Enemies);
+			++AmountOfEneiesBelowPlayerYPosition;
+		}
+	}
+
+	if (AmountOfEneiesBelowPlayerYPosition == 2)
+	{
+		if (m_ptrEnemiesBelowPlayer[0]->GetPosition().y > m_ptrEnemiesBelowPlayer[1]->GetPosition().y)
+		{
+			m_ptrEnemiesBelowPlayer[0]->Draw();
+			m_ptrEnemiesBelowPlayer[1]->Draw();
+		}
+		else
+		{
+			m_ptrEnemiesBelowPlayer[1]->Draw();
+			m_ptrEnemiesBelowPlayer[0]->Draw();
+		}
+	}
+	else if (AmountOfEneiesBelowPlayerYPosition) m_ptrEnemiesBelowPlayer[0]->Draw();
+	
 }

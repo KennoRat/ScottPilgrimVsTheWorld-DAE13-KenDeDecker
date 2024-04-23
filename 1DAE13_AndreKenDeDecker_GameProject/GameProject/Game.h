@@ -33,6 +33,7 @@ private:
 	void Cleanup( );
 	void ClearBackground( ) const;
 	void PlayeKeys(float elapsedSec);
+	void QuicksortDraw() const;
 
 	//Variables
 	bool m_PlayerLightAttacked{false};
@@ -47,6 +48,9 @@ private:
 	ScottPilgrim* m_ptrPlayer;
 	Texture* m_ptrMap;
 	Camera* m_ptrCamera;
-	EnemyMike* m_ptrTestEnemy;
+
+	//EnemyMike* m_ptrTestEnemy;
+
+	std::vector<EnemyMike*> m_ptrEnemies{};
 
 };

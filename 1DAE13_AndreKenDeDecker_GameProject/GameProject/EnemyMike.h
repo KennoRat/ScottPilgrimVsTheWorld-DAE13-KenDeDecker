@@ -14,22 +14,25 @@ public:
 	~EnemyMike();
 
 	void Draw() const;
-	void Update(float elapsedSec);
+	void Update(float elapsedSec, const Point2f& PlayerPosition);
 	void TranslateSprite() const;
 	void ResetSprite() const;
 	void CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheckCollision = false, bool GetThrownInTheAir = false);
 	bool CheckIdle() const;
-	
+	bool CheckIfAttackBoxIsOn();
+
 	bool GetIsDamaged() const;
 	bool GetIsColliding() const;
+	bool GetIsLeft() const;
 	int GetHealth() const;
 	Point2f GetPosition() const;
+	std::vector<Point2f> GetAttackBox() const;
 
 	void SetIsLeft(bool IsLeft);
 
 	enum class Status
 	{
-		Idle = 1, Walking = 2, Hit = 3, Block = 4, Falling = 5, OnTheGround = 6, GettingUp = 7, LightAttack = 8
+		Idle = 1, Walking = 2, Hit = 3, Block = 4, Falling = 5, OnTheGround = 6, GettingUp = 7, LightAttack = 8, Sprinting = 9, Taunt = 10, SpinKick = 11
 	};
 
 	Status m_EnemyStatus;
@@ -45,6 +48,9 @@ private:
 	bool m_IsFalling;
 	bool m_IsGettingUp;
 	bool m_IsMoving;
+	bool m_IsAttackBoxOn;
+	bool m_AttackBoxReset;
+	bool m_IsTaunting;
 	Point2f m_Position;
 	Point2f m_InitialJumpPosition;
 	Point2f m_NewPosition;
@@ -59,19 +65,22 @@ private:
 	float m_MaxAnimation;
 
 	//Time
-	float m_MovingDelayCounter;
-	float m_MaxMovingDelay;
+	float m_ChoicesDelayCounter;
+	float m_MaxChoicesDelay;
 
 	//Arrays
 	std::vector<Point2f> m_HitboxOnOrigin;
 	std::vector<Point2f> m_HitboxTransformed;
+	std::vector<Point2f> m_AttackBoxOnOrigin;
+	std::vector<Point2f> m_AttackBoxTransformed;
 	utils::HitInfo m_Hitinfo;
 	Status m_ChangedState;
 
 	//Functions
 	void ResetFrame();
 	void UpdateAnimation();
-	void UpdateMovingDelay();
+	void UpdateChoicesDelay(const Point2f& PlayerPosition);
 	void GoToRandomPosition(float elapsedSec);
+	void Attack(float elapsedSec);
 };
 
