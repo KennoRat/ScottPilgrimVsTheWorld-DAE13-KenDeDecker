@@ -17,7 +17,7 @@ public:
 	void Update(float elapsedSec, const Point2f& PlayerPosition);
 	void TranslateSprite() const;
 	void ResetSprite() const;
-	void CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheckCollision = false, bool GetThrownInTheAir = false);
+	void CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheckCollision = false, bool GetThrownInTheAir = false, bool GetUppercut = false);
 	bool CheckIdle() const;
 	bool CheckIfAttackBoxIsOn();
 
@@ -25,6 +25,7 @@ public:
 	bool GetIsColliding() const;
 	bool GetIsLeft() const;
 	int GetHealth() const;
+	int GetGotLightHitAmount() const;
 	Point2f GetPosition() const;
 	std::vector<Point2f> GetAttackBox() const;
 
@@ -32,12 +33,16 @@ public:
 
 	enum class Status
 	{
-		Idle = 1, Walking = 2, Hit = 3, Block = 4, Falling = 5, OnTheGround = 6, GettingUp = 7, LightAttack = 8, Sprinting = 9, Taunt = 10, SpinKick = 11
+		Idle = 1, Walking = 2, Hit = 3, Block = 4, Falling = 5, OnTheGround = 6, GettingUp = 7, LightAttack = 8, Sprinting = 9, Taunt = 10, SpinKick = 11, PickUpIdle = 12
 	};
 
 	Status m_EnemyStatus;
 
 private:
+
+	static Texture* m_ptrSpriteSheet;
+	static int m_InstanceCounter;
+
 	//Variables
 	bool m_IsAlive;
 	bool m_IsAttacking;
@@ -51,14 +56,19 @@ private:
 	bool m_IsAttackBoxOn;
 	bool m_AttackBoxReset;
 	bool m_IsTaunting;
+	bool m_StayOnGround;
+	bool m_IsBlocking;
+	bool m_IsAggressive;
+	bool m_IsStunned;
 	Point2f m_Position;
 	Point2f m_InitialJumpPosition;
 	Point2f m_NewPosition;
 	float m_Width;
 	float m_Height;
 	int m_Health;
+	int m_GotLightHitAmount;
 	Vector2f m_Velocity;
-	Texture* m_ptrSpriteSheet;
+	//Texture* m_ptrSpriteSheet;
 	float m_FrameNR;
 	float m_MaxFrame;
 	float m_AnimationCounter;
@@ -66,7 +76,16 @@ private:
 
 	//Time
 	float m_ChoicesDelayCounter;
-	float m_MaxChoicesDelay;
+	float m_MaxChoiceDelay;
+	float m_StayOnTheGroundCounter;
+	const float m_MAX_STAY_ON_THE_GROUND_DELAY{3.f};
+	float m_BlockingCounter;
+	const float m_MAX_BLOCKING_DELAY{0.25f};
+	float m_MoveToPlayerCounter;
+	const float m_MOVE_TO_PLAYER_DELAY{0.3f};
+	float m_StunnedCounter;
+	const float m_MAX_STUNNED_DELAY{0.8f};
+
 
 	//Arrays
 	std::vector<Point2f> m_HitboxOnOrigin;
@@ -80,7 +99,10 @@ private:
 	void ResetFrame();
 	void UpdateAnimation();
 	void UpdateChoicesDelay(const Point2f& PlayerPosition);
+	void UpdateStayOnTheGround();
+	void UpdateKeepBlocking(float elapsedSec);
+	void UpdateStunned();
 	void GoToRandomPosition(float elapsedSec);
-	void Attack(float elapsedSec);
+	void Block();
 };
 

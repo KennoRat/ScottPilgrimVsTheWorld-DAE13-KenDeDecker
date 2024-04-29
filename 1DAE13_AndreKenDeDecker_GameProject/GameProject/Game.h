@@ -38,6 +38,7 @@ private:
 	//Variables
 	bool m_PlayerLightAttacked{false};
 	bool m_PlayerResetLightAttackButton{false};
+	bool m_PlayerUppercutAttack{ false };
 
 	bool m_PlayerHeavyAttacked{ false };
 	bool m_PlayerResetHeavyAttackButton{ false };

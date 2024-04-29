@@ -71,7 +71,7 @@ ScottPilgrim::~ScottPilgrim()
 void ScottPilgrim::Draw() const
 {
 	float CollumnWidth{ m_ptrSpriteSheet->GetWidth() / 18.f }; // Width that will be taken from spritesheet
-	float RowHeigth = m_ptrSpriteSheet->GetHeight() / 15.f; // Row Height from spritesheet
+	float RowHeigth = m_ptrSpriteSheet->GetHeight() / 18.f; // Row Height from spritesheet
 	float RowIndex = float(m_ScottStatus);
 
 	if(m_ScottStatus == Status::MovingRight)
@@ -288,7 +288,7 @@ void ScottPilgrim::Update(float elapsedSec)
 	case ScottPilgrim::Status::GettingUp:
 
 		m_MaxFrame = 6.f;
-		m_MaxAnimation = 0.09f;
+		m_MaxAnimation = 0.11f;
 		UpdateAnimation();
 
 		break;
@@ -343,9 +343,22 @@ void ScottPilgrim::Update(float elapsedSec)
 		Matrix2x3 ScaleMat{};
 		ScaleMat.SetAsScale(-1.f, 1.f);
 		Matrix2x3 TransformMat{TranslationMat * ScaleMat};
+		if(m_ScottStatus == Status::JumpKick)
+		{
+			Matrix2x3 LegHitboxMat{};
+			LegHitboxMat.SetAsTranslate(m_Position.x + m_Width / 2.f, m_Position.y - m_Height/ 4.f);
+			TransformMat = LegHitboxMat * ScaleMat;
+		}
 		m_AttackBoxTransformed = TransformMat.Transform(m_AttackBoxOnOrigin);
 	}
-	else m_AttackBoxTransformed = TranslationMat.Transform(m_AttackBoxOnOrigin);
+	else
+	{
+		if (m_ScottStatus == Status::JumpKick)
+		{
+			TranslationMat.SetAsTranslate(Vector2f(m_Position.x, m_Position.y - m_Height / 4.f));
+		}
+		m_AttackBoxTransformed = TranslationMat.Transform(m_AttackBoxOnOrigin);
+	}
 }
 
 void ScottPilgrim::UpdateAnimation()
@@ -358,7 +371,14 @@ void ScottPilgrim::UpdateAnimation()
 		}
 		else
 		{
-			m_FrameNR = 0.f;
+			if(m_ScottStatus == Status::GettingUp)
+			{
+				if(m_IsLeft) m_Position.x -= 20.f;
+				else m_Position.x += 20.f;
+				m_FrameNR = 6.f;
+			}
+			else m_FrameNR = 0.f;
+
 
 			m_IsDamaged = false;
 			m_IsColliding = false;
@@ -410,6 +430,7 @@ void ScottPilgrim::UpdateAnimation()
 				m_IsOnTheGround = false;
 				m_ScottStatus = Status::GettingUp;
 				m_IsGettingUp = true;
+				m_AnimationCounter = 0.f;
 			}
 		}
 		m_AnimationCounter -= m_MaxAnimation;
@@ -550,6 +571,7 @@ void ScottPilgrim::UpdatePositionDuringBlockHit(float elapsedSec)
 	if(m_PushBackDelayCounter >= m_MAX_PUSH_BACK_DELAY)
 	{
 		m_IsHitWhileBlocking = false;
+		m_Velocity = Vector2f{ 300.f, 150.f };
 		m_PushBackDelayCounter -= m_MAX_PUSH_BACK_DELAY;
 	}
 
@@ -722,6 +744,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 			{
 				m_PushBackDelayCounter = 0.f;
 				m_IsHitWhileBlocking = true;
+				if (EnemyIsLeft == m_IsLeft) m_IsLeft = !m_IsLeft;
 			}
 			else
 			{
@@ -735,8 +758,23 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 					--m_Health;
 					m_IsAttacking = false;
 
+					if(m_IsJumping)
+					{
+						if(GetThrownInTheAir)
+						{
+							const float THROWBACK_SPEED{ 800.f };
+							m_Velocity.x = THROWBACK_SPEED;
+						}
+						const float JUMP_SPEED{ 300.f };
+						m_ScottStatus = Status::Falling;
+						m_Velocity.y = JUMP_SPEED;
+						m_Position.y += 5.f;
+						m_IsJumping = false;
+						m_IsFalling = true;
 
-					if (m_Health == 0)
+						if (EnemyIsLeft == m_IsLeft) m_Velocity.x = -m_Velocity.x;
+					}
+					else if (m_Health == 0)
 					{
 						const float JUMP_SPEED{ 1000.f };
 						m_ScottStatus = Status::Falling;

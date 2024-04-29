@@ -115,14 +115,16 @@ void Game::Update( float elapsedSec )
 			if (m_PlayerLightAttacked)
 			{
 				//std::cout << "Scott is Hitting" << std::endl;
-				Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
+				if (m_PlayerUppercutAttack)
+				{
+					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), false, false, true);
+				}
+				else
+				{
+					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
+				}
 				m_ptrPlayer->LightAttackCounterIncrement(Enemies->GetIsDamaged());
 
-				if(Enemies == m_ptrEnemies.back())
-				{
-					m_PlayerLightAttacked = false;
-				}
-				
 			}
 			else if (m_PlayerHeavyAttacked)
 			{
@@ -136,11 +138,13 @@ void Game::Update( float elapsedSec )
 				}
 
 				m_ptrPlayer->HeavyAttackCounterIncrement(Enemies->GetIsDamaged());
+			}
 
-				if (Enemies == m_ptrEnemies.back())
-				{
-					m_PlayerHeavyAttacked = false;
-				}
+			if (Enemies == m_ptrEnemies.back())
+			{
+			m_PlayerLightAttacked = false;
+			m_PlayerUppercutAttack = false;
+			m_PlayerHeavyAttacked = false;
 			}
 		}
 
@@ -230,22 +234,24 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 		{
 			for (EnemyMike* Enemies : m_ptrEnemies)
 			{
-				if (Enemies->GetHealth() == 1 && m_ptrPlayer->GetIsJumping() == false)
+				if ((Enemies->GetHealth() == 1 || Enemies->GetGotLightHitAmount() == 3 )&& m_ptrPlayer->GetIsJumping() == false && m_PlayerUppercutAttack == false)
 				{
 					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), true);
 					if (Enemies->GetIsColliding())
 					{
 						m_ptrPlayer->Attack(false, false, false, true);
+						m_PlayerUppercutAttack = true;
 					}
 				}
-				else m_ptrPlayer->Attack(true);
-				m_PlayerLightAttacked = true;
-				m_PlayerResetLightAttackButton = false;
 			}
+			if(m_PlayerUppercutAttack == false) m_ptrPlayer->Attack(true);
+			m_PlayerLightAttacked = true;
+			m_PlayerResetLightAttackButton = false;
 		}
 		else if (m_ptrPlayer->GetIsJumping())
 		{
 			m_ptrPlayer->Attack(false, false, true);
+			m_PlayerLightAttacked = true;
 		}
 
 	}
