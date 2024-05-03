@@ -13,17 +13,22 @@ public:
 	EnemyMike(Point2f position, float width, float height);
 	~EnemyMike();
 
+	EnemyMike(const EnemyMike& other);
+	EnemyMike& operator=(const EnemyMike& other);
+	EnemyMike(EnemyMike&& other) noexcept;
+	EnemyMike& operator=(EnemyMike&& other) noexcept;
+
+
 	void Draw() const;
 	void Update(float elapsedSec, const Point2f& PlayerPosition);
-	void TranslateSprite() const;
-	void ResetSprite() const;
 	void CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheckCollision = false, bool GetThrownInTheAir = false, bool GetUppercut = false);
+
 	bool CheckIdle() const;
 	bool CheckIfAttackBoxIsOn();
-
 	bool GetIsDamaged() const;
 	bool GetIsColliding() const;
 	bool GetIsLeft() const;
+	bool GetSpawnCoins() const;
 	int GetHealth() const;
 	int GetGotLightHitAmount() const;
 	Point2f GetPosition() const;
@@ -60,6 +65,8 @@ private:
 	bool m_IsBlocking;
 	bool m_IsAggressive;
 	bool m_IsStunned;
+	bool m_BeDrawn;
+	bool m_SpawnCoins;
 	Point2f m_Position;
 	Point2f m_InitialJumpPosition;
 	Point2f m_NewPosition;
@@ -68,7 +75,6 @@ private:
 	int m_Health;
 	int m_GotLightHitAmount;
 	Vector2f m_Velocity;
-	//Texture* m_ptrSpriteSheet;
 	float m_FrameNR;
 	float m_MaxFrame;
 	float m_AnimationCounter;
@@ -85,6 +91,10 @@ private:
 	const float m_MOVE_TO_PLAYER_DELAY{0.3f};
 	float m_StunnedCounter;
 	const float m_MAX_STUNNED_DELAY{0.8f};
+	float m_DeathCounter;
+	const float m_MAX_DEATH_DELAY{ 2.4f };
+	float m_DissolveCounter;
+	const float m_MAX_DISSOLVE_DELAY{ 0.3f };
 
 
 	//Arrays
@@ -96,12 +106,15 @@ private:
 	Status m_ChangedState;
 
 	//Functions
+	void TranslateSprite() const;
+	void ResetSprite() const;
 	void ResetFrame();
 	void UpdateAnimation();
 	void UpdateChoicesDelay(const Point2f& PlayerPosition);
 	void UpdateStayOnTheGround();
 	void UpdateKeepBlocking(float elapsedSec);
 	void UpdateStunned();
+	void UpdateDeath();
 	void GoToRandomPosition(float elapsedSec);
 	void Block();
 };

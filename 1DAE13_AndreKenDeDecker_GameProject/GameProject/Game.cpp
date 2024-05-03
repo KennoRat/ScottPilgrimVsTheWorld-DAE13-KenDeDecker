@@ -14,16 +14,17 @@ Game::~Game( )
 
 void Game::Initialize( )
 {
-	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().left, GetViewPort().height / 4.f }, 320.f, 280.f); // 150.f, 225.f
+	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().left, GetViewPort().height / 4.f }, m_PLAYER_WIDTH, m_PLAYER_HEIGHT);
 
 	m_ptrMap = new Texture("Level1_Sprite.png");
 
 	m_ptrCamera = new Camera(GetViewPort().width, GetViewPort().height);
 
-	//m_ptrTestEnemy = new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f }, 300.f, 225.f);
-
 	m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1200.f, GetViewPort().height / 4.f + 200.f}, 300.f, 225.f));
 	m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1200.f, GetViewPort().height / 4.f - 100.f }, 300.f, 225.f));
+	//m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f + 100.f }, 300.f, 225.f));
+
+	m_ptrWallet = new Wallet(70.f);
 }
 
 void Game::Cleanup( )
@@ -34,14 +35,19 @@ void Game::Cleanup( )
 	m_ptrMap = nullptr;
 	delete m_ptrCamera;
 	m_ptrCamera = nullptr;
+	delete m_ptrWallet;
+	m_ptrWallet = nullptr;
 	
-	//delete m_ptrTestEnemy;
-	//m_ptrTestEnemy = nullptr;
-
 	for (EnemyMike* Enemies : m_ptrEnemies)
 	{
 		delete Enemies;
 		Enemies = nullptr;
+	}
+
+	for(Coins* Money: m_ptrCoins)
+	{
+		delete Money;
+		Money = nullptr;
 	}
 }
 
@@ -49,59 +55,10 @@ void Game::Update( float elapsedSec )
 {
 	PlayeKeys(elapsedSec);
 
-	/*m_ptrPlayer->CheckKeys(elapsedSec, true);*/
 	m_ptrPlayer->Update(elapsedSec);
 	
-
-	//m_ptrTestEnemy->Update(elapsedSec, m_ptrPlayer->GetPosition());
-
-	//const float PLAYER_VS_ENEMY_Y_DISTANCE {30.f};
-
-	//if(m_ptrPlayer->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= m_ptrTestEnemy->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= m_ptrTestEnemy->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
-	//{
-	//	//std::cout << "Scott is Hitting" << std::endl;
-	//	if (m_PlayerLightAttacked)
-	//	{
-	//		//std::cout << "Scott is Hitting" << std::endl;
-	//		m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
-	//		m_ptrPlayer->LightAttackCounterIncrement(m_ptrTestEnemy->GetIsDamaged());
-	//		m_PlayerLightAttacked = false;
-	//	}
-	//	else if(m_PlayerHeavyAttacked)
-	//	{
-	//		if(m_ptrPlayer->GetHeavyAttackCounter() == 1) 
-	//		{
-	//			m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()) , false, true);
-	//		}
-	//		else
-	//		{
-	//			m_ptrTestEnemy->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()));
-	//		}
-	//		m_ptrPlayer->HeavyAttackCounterIncrement(m_ptrTestEnemy->GetIsDamaged());
-	//		m_PlayerHeavyAttacked = false;
-	//	}
-	//}
-
-	//if(m_ptrTestEnemy->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= m_ptrTestEnemy->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= m_ptrTestEnemy->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
-	//{
-	//	//std::cout << "Enemy is Hitting" << std::endl;
-	//	if (m_ptrTestEnemy->m_EnemyStatus == EnemyMike::Status::LightAttack) m_ptrPlayer->CheckHit(std::vector<Point2f>(m_ptrTestEnemy->GetAttackBox()));
-	//	else if (m_ptrTestEnemy->m_EnemyStatus == EnemyMike::Status::SpinKick) m_ptrPlayer->CheckHit(std::vector<Point2f>(m_ptrTestEnemy->GetAttackBox()), false, true);
-	//}
-	//
-
-	//if(m_ptrTestEnemy->CheckIdle())
-	//{
-	//	if (m_ptrPlayer->GetPosition().x > m_ptrTestEnemy->GetPosition().x) m_ptrTestEnemy->SetIsLeft(false);
-	//	else m_ptrTestEnemy->SetIsLeft(true);
-	//	m_ptrTestEnemy->m_EnemyStatus = EnemyMike::Status::Idle;
-	//}
-
-	//std::cout << "X Position: " << m_ptrPlayer->GetPosition().x << std::endl;
-	//std::cout << "Y Position: " << m_ptrPlayer->GetPosition().y << std::endl;
-
-
 	//Enemies Update
+	int EnemyNumber{ 0 };
 
 	for (EnemyMike* Enemies : m_ptrEnemies)
 	{
@@ -155,15 +112,70 @@ void Game::Update( float elapsedSec )
 			else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick) m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), false, true);
 		}
 
-
 		if (Enemies->CheckIdle())
 		{
 			if (m_ptrPlayer->GetPosition().x > Enemies->GetPosition().x) Enemies->SetIsLeft(false);
 			else Enemies->SetIsLeft(true);
 			Enemies->m_EnemyStatus = EnemyMike::Status::Idle;
 		}
+		else if(Enemies->GetSpawnCoins())
+		{
+			m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), 80.f, Coins::Type::Cents5));
+			m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), 80.f, Coins::Type::Cents10));
+			m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), 80.f, Coins::Type::Cents25));
+
+
+			delete Enemies;
+			m_ptrEnemies.erase(m_ptrEnemies.begin() + EnemyNumber);
+		}
+		++EnemyNumber;
 	}
 
+	// Coins Update
+
+	int CoinNumber{ 0 };
+
+	for (Coins* Money : m_ptrCoins)
+	{
+
+		Money->Update(elapsedSec);
+
+		utils::HitInfo m_Hitinfo;
+
+		if(utils::Raycast(m_ptrPlayer->GetHitbox(), Money->GetHitbox()[0], Money->GetHitbox()[1], m_Hitinfo))
+		{
+			if(Money->m_CoinType == Coins::Type::Dollar1 || Money->m_CoinType == Coins::Type::Dollars2)
+			{
+				m_AboveDecimalPoint += Money->GetValue();
+			}
+			else 
+			{
+				m_BelowDecimalPoint += Money->GetValue();
+
+				if(m_BelowDecimalPoint > 100)
+				{
+					m_BelowDecimalPoint -= 100;
+					++m_AboveDecimalPoint;
+				}
+			}
+
+			m_DoShowWallet = true;
+			m_ShowWalletCounter = 0.f;
+
+			delete Money;
+			m_ptrCoins.erase(m_ptrCoins.begin() + CoinNumber);
+
+		}
+
+		++CoinNumber;
+	}
+
+	if (m_DoShowWallet)
+	{
+		m_ShowWalletCounter += elapsedSec;
+		ShowWallet();
+		m_ptrWallet->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - 50.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 4.f * 3.f }, m_AboveDecimalPoint, m_BelowDecimalPoint);
+	}
 }
 
 void Game::Draw( ) const
@@ -179,55 +191,30 @@ void Game::Draw( ) const
 	//Draw Map
 	m_ptrMap->Draw(dstRectfMap, srcRectMap);
 
-	//if(m_ptrPlayer->GetPosition().y - 20.f <= m_ptrTestEnemy->GetPosition().y)
-	//{
-	//	//Draw Enemy
-	//	m_ptrTestEnemy->Draw();
+	//Coins 
+	for (Coins* Money : m_ptrCoins)
+	{
+		Money->Draw();
+	}
 
-	//	//Draw Player
-	//	m_ptrPlayer->Draw();
-	//}
-	//else
-	//{
-	//	//Draw Player
-	//	m_ptrPlayer->Draw();
-
-	//	//Draw Enemy
-	//	m_ptrTestEnemy->Draw();
-	//}
-
-	//Enemies Draw
-	//for (EnemyMike* Enemies : m_ptrEnemies)
-	//{
-	//	if (m_ptrPlayer->GetPosition().y - 20.f <= Enemies->GetPosition().y)
-	//	{
-	//		//Draw Enemy
-	//		Enemies->Draw();
-
-	//		//Draw Player
-	//		m_ptrPlayer->Draw();
-	//	}
-	//	else
-	//	{
-	//		//Draw Player
-	//		m_ptrPlayer->Draw();
-
-	//		//Draw Enemy
-	//		Enemies->Draw();
-	//	}
-	//}
-
+	//Draw Player and Enemies depending on Y-axis
 	QuicksortDraw();
+
+	//Draw Wallet
+	if (m_DoShowWallet)
+	{
+		m_ptrWallet->Draw();
+	}
 
 	//Camera
 	m_ptrCamera->Reset();
 
-	
 }
 
 void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 {
 
+	// Attack Moves and Jump
 	if(e.keysym.sym == SDLK_j && m_PlayerResetLightAttackButton)
 	{
 		if ( m_ptrPlayer->CheckIdle())
@@ -297,6 +284,7 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 
 void Game::ProcessKeyUpEvent( const SDL_KeyboardEvent& e )
 {
+	//Reset Keys
 	if (e.keysym.sym == SDLK_j) m_PlayerResetLightAttackButton = true;
 
 	if (e.keysym.sym == SDLK_k) m_PlayerResetHeavyAttackButton = true;
@@ -307,20 +295,6 @@ void Game::ProcessKeyUpEvent( const SDL_KeyboardEvent& e )
 
 	if (e.keysym.sym == SDLK_l && (m_ptrPlayer->CheckIdle() || m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::Block)) m_ptrPlayer->Block(true);
 
-	//std::cout << "KEYUP event: " << e.keysym.sym << std::endl;
-	//switch ( e.keysym.sym )
-	//{
-	//case SDLK_LEFT:
-	//	//std::cout << "Left arrow key released\n";
-	//	break;
-	//case SDLK_RIGHT:
-	//	//std::cout << "`Right arrow key released\n";
-	//	break;
-	//case SDLK_1:
-	//case SDLK_KP_1:
-	//	//std::cout << "Key 1 released\n";
-	//	break;
-	//}
 }
 
 void Game::ProcessMouseMotionEvent( const SDL_MouseMotionEvent& e )
@@ -374,11 +348,6 @@ void Game::PlayeKeys(float elapsedSec)
 	 /*Check keyboard state*/
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
-	/*if(pStates[SDL_SCANCODE_J])
-	{
-		m_ptrPlayer->Attack(true);
-		m_ptrPlayer->LightAttackCounter(m_ptrTestEnemy->GetIsDamaged());
-	}*/
 	if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_UP] || pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_W])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, true, false, true);
@@ -419,7 +388,7 @@ void Game::PlayeKeys(float elapsedSec)
 
 void Game::QuicksortDraw() const
 {
-	int AmountOfEneiesAbovePlayerYPosition{};
+	int AmountOfEnemiesAbovePlayerYPosition{};
 	std::vector<EnemyMike*> m_ptrEnemiesAbovePlayer{};
 
 	for (EnemyMike* Enemies : m_ptrEnemies)
@@ -427,11 +396,11 @@ void Game::QuicksortDraw() const
 		if (Enemies->GetPosition().y >= m_ptrPlayer->GetPosition().y)
 		{
 			m_ptrEnemiesAbovePlayer.push_back(Enemies);
-			++AmountOfEneiesAbovePlayerYPosition;
+			++AmountOfEnemiesAbovePlayerYPosition;
 		}
 	}
 
-	if (AmountOfEneiesAbovePlayerYPosition == 2)
+	if (AmountOfEnemiesAbovePlayerYPosition == 2)
 	{
 		if (m_ptrEnemiesAbovePlayer[0]->GetPosition().y > m_ptrEnemiesAbovePlayer[1]->GetPosition().y)
 		{
@@ -444,11 +413,11 @@ void Game::QuicksortDraw() const
 			m_ptrEnemiesAbovePlayer[0]->Draw();
 		}
 	}
-	else if (AmountOfEneiesAbovePlayerYPosition) m_ptrEnemiesAbovePlayer[0]->Draw();
+	else if (AmountOfEnemiesAbovePlayerYPosition == 1) m_ptrEnemiesAbovePlayer[0]->Draw();
 
 	m_ptrPlayer->Draw();
 
-	int AmountOfEneiesBelowPlayerYPosition{};
+	int AmountOfEnemiesBelowPlayerYPosition{};
 	std::vector<EnemyMike*> m_ptrEnemiesBelowPlayer{};
 
 	for (EnemyMike* Enemies : m_ptrEnemies)
@@ -456,11 +425,11 @@ void Game::QuicksortDraw() const
 		if (Enemies->GetPosition().y < m_ptrPlayer->GetPosition().y)
 		{
 			m_ptrEnemiesBelowPlayer.push_back(Enemies);
-			++AmountOfEneiesBelowPlayerYPosition;
+			++AmountOfEnemiesBelowPlayerYPosition;
 		}
 	}
 
-	if (AmountOfEneiesBelowPlayerYPosition == 2)
+	if (AmountOfEnemiesBelowPlayerYPosition == 2)
 	{
 		if (m_ptrEnemiesBelowPlayer[0]->GetPosition().y > m_ptrEnemiesBelowPlayer[1]->GetPosition().y)
 		{
@@ -473,6 +442,15 @@ void Game::QuicksortDraw() const
 			m_ptrEnemiesBelowPlayer[0]->Draw();
 		}
 	}
-	else if (AmountOfEneiesBelowPlayerYPosition) m_ptrEnemiesBelowPlayer[0]->Draw();
+	else if (AmountOfEnemiesBelowPlayerYPosition == 1) m_ptrEnemiesBelowPlayer[0]->Draw();
 	
+}
+
+void Game::ShowWallet()
+{
+	if(m_ShowWalletCounter >= m_MAX_SHOW_WALLET_DELAY)
+	{
+		m_DoShowWallet = false;
+		m_ShowWalletCounter -= m_MAX_SHOW_WALLET_DELAY;
+	}
 }

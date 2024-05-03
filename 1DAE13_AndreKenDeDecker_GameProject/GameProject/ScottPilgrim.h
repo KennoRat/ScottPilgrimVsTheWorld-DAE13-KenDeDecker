@@ -19,8 +19,6 @@ public:
 	void CheckKeys(float elapsedSec, bool moveRight, bool moveLeft = false ,bool moveUp = false, bool moveDown = false);
 	void Attack(bool lightAttack, bool heavyAttack = false, bool jumpAttack = false, bool uppercut = false);
 	void Jump(bool moving = false, bool WasRunningBeforeJump = false);
-	void TranslateSprite() const;
-	void ResetSprite() const;
 	bool CheckIdle() const;
 	bool CheckIfAttackBoxIsOn() const;
 	void LightAttackCounterIncrement(bool IsHit);
@@ -35,6 +33,7 @@ public:
 	Point2f GetPosition() const;
 	float GetWidth() const;
 	std::vector<Point2f> GetAttackBox() const;
+	std::vector<Point2f> GetHitbox() const;
 
 	void SetIsRunningTrigger(bool IsRunningTrigger);
 
@@ -102,6 +101,8 @@ private:
 	std::vector<Point2f> m_AttackBoxTransformed;
 
 	// Functions
+	void TranslateSprite() const;
+	void ResetSprite() const;
 	void ResetFrame();
 	void UpdateAnimation();
 	void UpdateLightAttackDelay();

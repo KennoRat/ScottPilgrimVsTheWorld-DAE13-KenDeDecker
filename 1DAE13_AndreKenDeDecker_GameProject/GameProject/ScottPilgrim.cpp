@@ -868,7 +868,12 @@ float ScottPilgrim::GetWidth() const
 
 std::vector<Point2f> ScottPilgrim::GetAttackBox() const
 {
-	return std::vector<Point2f>(m_AttackBoxTransformed);
+	return m_AttackBoxTransformed;
+}
+
+std::vector<Point2f> ScottPilgrim::GetHitbox() const
+{
+	return m_PlayerHitboxTransformed;
 }
 
 void ScottPilgrim::ResetFrame()

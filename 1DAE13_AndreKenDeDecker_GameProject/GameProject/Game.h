@@ -3,6 +3,8 @@
 #include "ScottPilgrim.h"
 #include "EnemyMike.h"
 #include "Camera.h"
+#include "Coins.h"
+#include "Wallet.h"
 #include <iostream>
 
 class Game : public BaseGame
@@ -34,6 +36,7 @@ private:
 	void ClearBackground( ) const;
 	void PlayeKeys(float elapsedSec);
 	void QuicksortDraw() const;
+	void ShowWallet();
 
 	//Variables
 	bool m_PlayerLightAttacked{false};
@@ -46,12 +49,26 @@ private:
 	bool m_PlayerResetRunLeft{true};
 	bool m_PlayerResetRunRight{ true };
 
+	bool m_DoShowWallet{ false };
+
+	int m_AboveDecimalPoint{};
+	int m_BelowDecimalPoint{};
+
+	float m_PLAYER_HEIGHT{ 280.f };
+	float m_PLAYER_WIDTH{ 320.f };
+
 	ScottPilgrim* m_ptrPlayer;
 	Texture* m_ptrMap;
 	Camera* m_ptrCamera;
+	Wallet* m_ptrWallet;
 
 	//EnemyMike* m_ptrTestEnemy;
 
 	std::vector<EnemyMike*> m_ptrEnemies{};
+	std::vector<Coins*> m_ptrCoins{};
+
+	//Timer
+	float m_ShowWalletCounter{};
+	const float m_MAX_SHOW_WALLET_DELAY{ 1.5f };
 
 };
