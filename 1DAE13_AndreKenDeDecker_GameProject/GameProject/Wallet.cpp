@@ -11,6 +11,41 @@ Wallet::Wallet(float size): m_Size{size}
 	m_ptrSpriteSheet = new Texture("MoneyNumbers_Sprite.png");
 }
 
+Wallet::~Wallet()
+{
+	delete m_ptrSpriteSheet;
+	m_ptrSpriteSheet = nullptr;
+}
+
+Wallet::Wallet(const Wallet& other): Wallet(other.m_Size)
+{
+
+}
+
+Wallet& Wallet::operator=(const Wallet& other)
+{
+	if (this != &other)
+	{
+		m_Size = other.m_Size;
+	}
+	return *this;
+}
+
+Wallet::Wallet(Wallet&& other) noexcept : m_Size{std::move(other.m_Size)}
+{
+	other.m_ptrSpriteSheet = nullptr;
+}
+
+Wallet& Wallet::operator=(Wallet&& other) noexcept
+{
+	if (this != &other)
+	{
+		m_Size = std::move(other.m_Size);
+		other.m_ptrSpriteSheet = nullptr;
+	}
+	return *this;
+}
+
 void Wallet::Draw() const
 {
 	float CollumnWidth{ m_ptrSpriteSheet->GetWidth() / 15.f };

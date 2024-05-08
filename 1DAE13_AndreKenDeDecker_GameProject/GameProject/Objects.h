@@ -1,0 +1,65 @@
+#pragma once
+#include <iostream>
+#include "Texture.h"
+#include <vector>
+#include "utils.h"
+#include "Matrix2x3.h"
+
+class Objects
+{
+public:
+	Objects(Point2f Position, float Width, float Height);
+	~Objects();
+
+	void Draw() const;
+	void Update(float elapsedSec, Point2f Position, bool IsLeft, const std::vector<Point2f>& MapSvg);
+	void Update(float elapsedSec, const std::vector<Point2f>& MapSvg);
+	void Collision(const std::vector<Point2f>& Hitbox, bool IsLeft);
+	void PickUp(const std::vector<Point2f>& Hitbox);
+	void DroppedObject(bool IsPickedUp, float YPosition);
+	void ThrownObject(float YPosition);
+	void ObjectHit(bool IsHit);
+
+	bool GetIsPickedUp() const;
+	bool GetIsFlipped() const;
+	bool GetDoDamage() const;
+	int GetRumble() const;
+	float GetFallYPosition() const;
+	Point2f GetPosition() const;
+	std::vector<Point2f> GetHitbox() const;
+
+	void SetIsFlipped(bool IsFlipped);
+	void SetRumble(int Rumble);
+
+private:
+	Point2f m_Position;
+	bool m_IsInTheAir;
+	bool m_IsSliding;
+	bool m_IsPickedUp;
+	bool m_IsLeft;
+	bool m_IsFlipped;
+	bool m_DoDamage;
+	int m_Rumble;
+	float m_Width;
+	float m_Height;
+	float m_FallYPosition;
+
+
+	std::vector<Point2f> m_HitboxOrigin;
+	std::vector<Point2f> m_HitboxTransformed;
+	utils::HitInfo m_Hitinfo;
+	Vector2f m_Velocity;
+
+	Texture* m_ptrSpriteSheet;
+
+	float m_SlideCounter;
+	const float m_MAX_SLIDE_DELAY{1.5f};
+
+	//Functions
+	void TranslateSprite() const;
+	void ResetSprite() const;
+	void UpdateXPosition(float elapsedSec);
+	void UpdateYPosition(float elapsedSec);
+	void CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg);
+};
+

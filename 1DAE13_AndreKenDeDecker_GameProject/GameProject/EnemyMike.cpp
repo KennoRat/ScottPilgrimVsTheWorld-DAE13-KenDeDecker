@@ -148,7 +148,7 @@ void EnemyMike::Draw() const
 	}
 }
 
-void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition)
+void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<Point2f>& MapSvg)
 {
 	m_AnimationCounter += elapsedSec;
 
@@ -283,8 +283,16 @@ void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition)
 		if(m_IsAggressive)
 		{
 			float PlayerDistance{ 180.f };
-			if (m_Position.x < PlayerPosition.x) m_NewPosition.x = PlayerPosition.x - PlayerDistance;
-			else m_NewPosition.x = PlayerPosition.x + PlayerDistance;
+			if (m_Position.x < PlayerPosition.x)
+			{
+				m_NewPosition.x = PlayerPosition.x - PlayerDistance;
+				m_IsLeft = false;
+			}
+			else
+			{
+				m_NewPosition.x = PlayerPosition.x + PlayerDistance;
+				m_IsLeft = true; 
+			}
 			m_NewPosition.y = PlayerPosition.y;
 		}
 	
@@ -351,6 +359,8 @@ void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition)
 	else m_AttackBoxTransformed = TranslationMat.Transform(m_AttackBoxOnOrigin);
 
 	if (m_IsMoving) GoToRandomPosition(elapsedSec);
+
+	CheckIfGoingOutOfBounds(MapSvg);
 }
 
 void EnemyMike::UpdateAnimation()
@@ -418,11 +428,13 @@ void EnemyMike::UpdateChoicesDelay(const Point2f& PlayerPosition)
 
 		if(RandomChoice >= 60)
 		{
-			int MoveDistance{ 500 };
+			int MoveXDistance{ 300 };
+			int MoveYDistance{ 50 };
 
 			m_IsMoving = true;
-			m_NewPosition.x = float(rand() % MoveDistance - MoveDistance / 2) + m_Position.x;
-			m_NewPosition.y = PlayerPosition.y;
+			if (m_Position.x < PlayerPosition.x) m_NewPosition.x = PlayerPosition.x - float(rand() % MoveXDistance + 350.f);
+			else m_NewPosition.x = PlayerPosition.x + float(rand() % MoveXDistance + 350.f);
+			m_NewPosition.y = PlayerPosition.y + float(rand() % MoveYDistance - (MoveYDistance / 2.f));
 			m_EnemyStatus = Status::Walking;
 		}
 		else if(RandomChoice >= 15)
@@ -472,6 +484,7 @@ void EnemyMike::UpdateKeepBlocking(float elapsedSec)
 	{
 		std::cout << "Stop Blocking" << std::endl;
 		m_IsBlocking = false;
+		m_IsDamaged = false;
 		m_BlockingCounter -= m_MAX_BLOCKING_DELAY;
 	}
 
@@ -573,6 +586,43 @@ void EnemyMike::Block()
 	m_IsDamaged = true;
 }
 
+void EnemyMike::CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg)
+{
+
+	float yLength{ 5.f };
+
+	if (utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
+	{
+		if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+		else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+		if(m_IsBlocking)
+		{
+			m_IsBlocking = false;
+			m_IsDamaged = false;
+			m_BlockingCounter = 0.f;
+		}
+	}
+	else if (m_IsFalling)
+	{
+		yLength -= m_Position.y - m_InitialJumpPosition.y;
+
+		if (utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
+		{
+			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+			else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+		}
+	}
+
+	if ((utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y - 1.f }, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y + yLength }, m_Hitinfo)
+		|| utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y - 1.f }, Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y + yLength }, m_Hitinfo))
+		&& m_IsFalling == false)
+	{
+		if (m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 6.f;
+		else m_Position.y = m_Hitinfo.intersectPoint.y;
+	}
+
+}
+
 void EnemyMike::TranslateSprite() const
 {
 	glPushMatrix();
@@ -665,10 +715,9 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheck
 					{
 						m_EnemyStatus = Status::Hit;
 						++m_GotLightHitAmount;
-						m_IsDamaged = true;
 					}
+					m_IsDamaged = true;
 					ResetFrame();
-
 				}
 			}
 		}

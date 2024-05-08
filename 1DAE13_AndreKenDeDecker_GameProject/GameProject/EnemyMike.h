@@ -11,7 +11,7 @@ class EnemyMike
 public:
 
 	EnemyMike(Point2f position, float width, float height);
-	~EnemyMike();
+	~EnemyMike() noexcept;
 
 	EnemyMike(const EnemyMike& other);
 	EnemyMike& operator=(const EnemyMike& other);
@@ -20,7 +20,7 @@ public:
 
 
 	void Draw() const;
-	void Update(float elapsedSec, const Point2f& PlayerPosition);
+	void Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<Point2f>& MapSvg);
 	void CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheckCollision = false, bool GetThrownInTheAir = false, bool GetUppercut = false);
 
 	bool CheckIdle() const;
@@ -117,5 +117,6 @@ private:
 	void UpdateDeath();
 	void GoToRandomPosition(float elapsedSec);
 	void Block();
+	void CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg);
 };
 

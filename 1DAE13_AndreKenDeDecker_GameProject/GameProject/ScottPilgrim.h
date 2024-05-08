@@ -11,10 +11,10 @@ class ScottPilgrim final
 {
 public:
 	ScottPilgrim(Point2f position, float width, float height);
-	~ScottPilgrim();
+	~ScottPilgrim() noexcept;
 
 	void Draw() const;
-	void Update(float elapsedSec);
+	void Update(float elapsedSec, const std::vector<Point2f>& MapSvg);
 	/*void CheckKeys(float elapsedSec, bool KeyPressed = false);*/
 	void CheckKeys(float elapsedSec, bool moveRight, bool moveLeft = false ,bool moveUp = false, bool moveDown = false);
 	void Attack(bool lightAttack, bool heavyAttack = false, bool jumpAttack = false, bool uppercut = false);
@@ -25,21 +25,29 @@ public:
 	void HeavyAttackCounterIncrement(bool IsHit);
 	void CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsLeft, bool JustToCheckCollision = false, bool GetThrownInTheAir = false);
 	void Block(bool Unblock = false);
+	void HasPickedUpObject(bool HasPickUp);
 
 	bool GetIsHit() const;
 	bool GetIsJumping() const;
 	bool GetIsRunningTrigger() const;
+	bool GetIsLeft() const;
+	bool GetHasPickedUpAnObject() const;
+	bool GetIsDamaged() const;
+	bool GetFlipBox() const;
+	bool GetThrowObject() const;
 	int GetHeavyAttackCounter() const;
+	int GetObjectRumble() const;
 	Point2f GetPosition() const;
 	float GetWidth() const;
 	std::vector<Point2f> GetAttackBox() const;
 	std::vector<Point2f> GetHitbox() const;
 
 	void SetIsRunningTrigger(bool IsRunningTrigger);
-
+	
 	enum class Status
 	{
-		Idle = 1, MovingLeft = 2, MovingRight = 20, LightAttack = 3, HeavyAttack = 4, Jump = 5, JumpKick = 6, Uppercut = 7, RunningLeft = 8, RunningRight = 21, SpinKick = 9, Hit = 10, Falling = 11, OnTheGround = 12, GettingUp = 13, Block = 14
+		Idle = 1, MovingLeft = 2, MovingRight = 20, LightAttack = 3, HeavyAttack = 4, Jump = 5, JumpKick = 6, Uppercut = 7, RunningLeft = 8, RunningRight = 21
+		, SpinKick = 9, Hit = 10, Falling = 11, OnTheGround = 12, GettingUp = 13, Block = 14, PickUp = 15, PickUpAttack = 16, PickUpThrow = 17
 	};
 
 	Status m_ScottStatus;
@@ -66,17 +74,27 @@ private:
 	bool m_IsBlocking;
 	bool m_IsUnblocking;
 	bool m_IsHitWhileBlocking;
+	bool m_HasPickUpObject;
+	bool m_IsPickingUp;
+	bool m_FlipObject;
+	bool m_ThrowObject;
+	bool m_HitFromTheFront;
+
 	int m_LightAttackCounter;
 	int m_HeavyAttackCounter;
 	int m_Health;
+	int m_ObjectRumble;
+
 	Point2f m_Position;
 	Point2f m_InitialJumpPosition;
+
 	float m_Width;
 	float m_Height;
 	float m_MaxFrame;
+	float m_FrameNR;
+
 	Vector2f m_Velocity;
 	Texture* m_ptrSpriteSheet;
-	float m_FrameNR;
 	Status m_ChangedState;
 	utils::HitInfo m_Hitinfo;
 
@@ -110,6 +128,8 @@ private:
 	void UpdateJumpDelay();
 	void UpdateRunningDelay();
 	void UpdatePositionDuringJump(float elapsedSec, bool isAttacking = false);
+	void UpdatePositionDuringFall(float elapsedSec);
 	void UpdatePositionDuringBlockHit(float elapsedSec);
+	void CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg);
 };
 

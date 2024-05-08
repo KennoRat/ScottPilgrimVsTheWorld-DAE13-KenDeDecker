@@ -6,6 +6,12 @@ class Wallet
 {
 public:
 	Wallet(float size);
+	~Wallet() noexcept;
+
+	Wallet(const Wallet& other);
+	Wallet& operator=(const Wallet& other);
+	Wallet(Wallet&& other) noexcept;
+	Wallet& operator=(Wallet&& other) noexcept;
 
 	void Draw() const;
 	void Update(float elapsedSec, Point2f Position, int AboveDecimal, int BelowDecimal);

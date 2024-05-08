@@ -6,6 +6,9 @@
 #include "Coins.h"
 #include "Wallet.h"
 #include <iostream>
+#include "Objects.h"
+#include <SVGParser.h>
+#include "DamageNumbers.h"
 
 class Game : public BaseGame
 {
@@ -34,7 +37,7 @@ private:
 	void Initialize();
 	void Cleanup( );
 	void ClearBackground( ) const;
-	void PlayeKeys(float elapsedSec);
+	void PlayerKeys(float elapsedSec);
 	void QuicksortDraw() const;
 	void ShowWallet();
 
@@ -54,18 +57,27 @@ private:
 	int m_AboveDecimalPoint{};
 	int m_BelowDecimalPoint{};
 
-	float m_PLAYER_HEIGHT{ 280.f };
-	float m_PLAYER_WIDTH{ 320.f };
+	const float m_PLAYER_HEIGHT{ 280.f };
+	const float m_PLAYER_WIDTH{ 320.f };
+	const float m_ENEMY_HEIGHT{ 230.f };
+	const float m_ENEMY_WIDTH{ 300.f };
+	const float m_COINS_SIZE{ 80.f };
+	const float m_DAMAGE_SIZE{ 40.f };
 
 	ScottPilgrim* m_ptrPlayer;
 	Texture* m_ptrMap;
 	Camera* m_ptrCamera;
 	Wallet* m_ptrWallet;
+	Objects* m_ptrTestObject;
 
 	//EnemyMike* m_ptrTestEnemy;
 
 	std::vector<EnemyMike*> m_ptrEnemies{};
 	std::vector<Coins*> m_ptrCoins{};
+	std::vector<DamageNumbers*> m_ptrDamageNumbers{};
+
+	std::vector<std::vector<Point2f>> m_MapSvg;
+	std::vector<Point2f> m_TransformSvg;
 
 	//Timer
 	float m_ShowWalletCounter{};

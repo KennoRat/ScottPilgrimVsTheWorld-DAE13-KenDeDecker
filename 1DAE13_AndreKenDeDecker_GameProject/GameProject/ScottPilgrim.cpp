@@ -24,8 +24,14 @@ ScottPilgrim::ScottPilgrim(Point2f position, float width, float height): m_Posit
 	m_IsBlocking = false;
 	m_IsUnblocking = false;
 	m_IsHitWhileBlocking = false;
+	m_HasPickUpObject = false;
+	m_IsPickingUp = false;
+	m_FlipObject = false;
+	m_ThrowObject = false;
+	m_HitFromTheFront = false;
 	m_LightAttackCounter = 0;
 	m_HeavyAttackCounter = 0;
+	m_ObjectRumble = 0;
 	m_Health = 20;
 	m_Velocity = Vector2f{ 300.f, 150.f };
 	m_FrameNR = 0.f;
@@ -99,23 +105,33 @@ void ScottPilgrim::Draw() const
 	utils::DrawPolygon(m_AttackBoxTransformed);
 }
 
-void ScottPilgrim::Update(float elapsedSec)
+void ScottPilgrim::Update(float elapsedSec, const std::vector<Point2f>& MapSvg)
 {
 	m_AnimationCounter += elapsedSec;
-
-	float HitboxHeight{ m_Height - m_Height / 6.f };
 
 	switch (m_ScottStatus)
 	{
 	case ScottPilgrim::Status::Idle:
 		m_MaxAnimation = 0.09f;
-		m_MaxFrame = 7.f;
+		if(m_HasPickUpObject) m_MaxFrame = 11.f;
+		else m_MaxFrame = 7.f;
+
+		if (m_FrameNR == 11.f) m_ObjectRumble = 2.f;
+		else m_ObjectRumble = 0.f;
+		
 		UpdateAnimation();
 		break;
 	case ScottPilgrim::Status::MovingRight:
 	case ScottPilgrim::Status::MovingLeft:
 		m_MaxAnimation = 0.09f;
-		m_MaxFrame = 5.f;
+
+		if (m_HasPickUpObject) m_MaxFrame = 11.f;
+		else m_MaxFrame = 5.f;
+
+		if (m_FrameNR == 11.f || m_FrameNR == 8.f) m_ObjectRumble = 2.f;
+		if (m_FrameNR == 10.f || m_FrameNR == 7.f) m_ObjectRumble = 4.f;
+		else m_ObjectRumble = 0.f;
+
 		UpdateAnimation();
 		break;
 	case ScottPilgrim::Status::LightAttack:
@@ -201,7 +217,12 @@ void ScottPilgrim::Update(float elapsedSec)
 	case ScottPilgrim::Status::RunningRight:
 	case ScottPilgrim::Status::RunningLeft:
 		m_MaxAnimation = 0.09f;
-		m_MaxFrame = 6.f;
+
+		if (m_HasPickUpObject) m_MaxFrame = 10.f;
+		else m_MaxFrame = 6.f;
+
+		if (m_FrameNR == 7.f || m_FrameNR == 9.f || m_FrameNR == 10.f) m_ObjectRumble = 20.f;
+		else m_ObjectRumble = 10.f;
 
 		UpdateAnimation();
 		break;
@@ -238,43 +259,7 @@ void ScottPilgrim::Update(float elapsedSec)
 
 	case ScottPilgrim::Status::Falling:
 
-		if (m_Velocity.y > 580.f) m_FrameNR = 0;
-		else if (m_Velocity.y > 300.f) m_FrameNR = 1;
-		else if (m_Velocity.y > 150.f) m_FrameNR = 2;
-		else if (m_Velocity.y > 0.f) m_FrameNR = 3;
-		else if (m_Position.y > m_InitialJumpPosition.y + 2.f * HitboxHeight / 4.f * 2.f) m_FrameNR = 4;
-		else if (m_Position.y > m_InitialJumpPosition.y) m_FrameNR = 5;
-
-		if (m_InitialJumpPosition.y < m_Position.y)
-		{
-			if (m_IsLeft == false)
-			{
-				m_Position.x -= m_Velocity.x * elapsedSec;
-				m_InitialJumpPosition.x -= m_Velocity.x * elapsedSec;
-			}
-			else
-			{
-				m_Position.x += m_Velocity.x * elapsedSec;
-				m_InitialJumpPosition.x += m_Velocity.x * elapsedSec;
-			}
-
-			m_Velocity.y -= 2000.f * elapsedSec;
-			m_Position.y += m_Velocity.y * elapsedSec;
-		}
-		else if (m_Position.y == m_InitialJumpPosition.y)
-		{
-			m_IsFalling = false;
-			m_IsDamaged = false;
-			m_IsOnTheGround = true;
-			m_ScottStatus = Status::OnTheGround;
-			m_AnimationCounter = 0.f;
-		}
-		else
-		{
-			m_FrameNR = 0;
-			m_Position.y = m_InitialJumpPosition.y;
-			m_Velocity = Vector2f{ 300.f, 150.f };
-		}
+		UpdatePositionDuringFall(elapsedSec);
 
 		break;
 	case ScottPilgrim::Status::OnTheGround:
@@ -304,6 +289,35 @@ void ScottPilgrim::Update(float elapsedSec)
 		}
 		else if (m_IsBlocking) m_FrameNR = 0.f;
 
+		break;
+	case ScottPilgrim::Status::PickUp:
+		m_MaxFrame = 1.f;
+		m_MaxAnimation = 0.15f;
+		m_IsAttackBoxOn = false;
+		UpdateAnimation();
+		break;
+	case ScottPilgrim::Status::PickUpAttack:
+
+		m_MaxFrame = 6.f;
+		m_MaxAnimation = 0.10f;
+
+		if (m_FrameNR == 4.f)m_IsAttackBoxOn = true;
+		else m_IsAttackBoxOn = false;
+
+		if (m_FrameNR >= 4.f) m_FlipObject = true;
+		else m_FlipObject = false;
+
+		UpdateAnimation();
+
+		break;
+	case ScottPilgrim::Status::PickUpThrow:
+		m_MaxFrame = 6.f;
+		m_MaxAnimation = 0.10f;
+
+		if (m_FrameNR == 3) m_ThrowObject = true;
+		else m_ThrowObject = false;
+
+		UpdateAnimation();
 		break;
 	}
 
@@ -359,6 +373,8 @@ void ScottPilgrim::Update(float elapsedSec)
 		}
 		m_AttackBoxTransformed = TranslationMat.Transform(m_AttackBoxOnOrigin);
 	}
+
+	CheckIfGoingOutOfBounds(MapSvg);
 }
 
 void ScottPilgrim::UpdateAnimation()
@@ -371,23 +387,43 @@ void ScottPilgrim::UpdateAnimation()
 		}
 		else
 		{
-			if(m_ScottStatus == Status::GettingUp)
+			if(m_HasPickUpObject)
 			{
-				if(m_IsLeft) m_Position.x -= 20.f;
-				else m_Position.x += 20.f;
-				m_FrameNR = 6.f;
+				if (m_ScottStatus == Status::Idle || m_ScottStatus == Status::PickUpAttack) m_FrameNR = 8.f;
+				else if (m_ScottStatus == Status::MovingRight || m_ScottStatus == Status::MovingLeft) m_FrameNR = 6.f;
+				else if (m_ScottStatus == Status::RunningRight || m_ScottStatus == Status::RunningLeft) m_FrameNR = 7.f;
+				else if (m_ScottStatus == Status::PickUpThrow)
+				{
+					m_ThrowObject = false;
+					m_HasPickUpObject = false;
+					m_FrameNR = 0.f;
+				}
+				else m_FrameNR = 0.f;
+
 			}
-			else m_FrameNR = 0.f;
-
-
+			else 
+			{
+				if (m_ScottStatus == Status::GettingUp)
+				{
+					if (m_IsLeft) m_Position.x -= 20.f;
+					else m_Position.x += 20.f;
+					m_FrameNR = 6.f;
+				}
+				else m_FrameNR = 0.f;
+			}
+			
 			m_IsDamaged = false;
 			m_IsColliding = false;
 			m_IsGettingUp = false;
 			m_IsBlocking = false;
 			m_IsUnblocking = false;
+			m_IsPickingUp = false;
+			m_FlipObject = false;
 
-			if(m_ScottStatus == Status::LightAttack || m_ScottStatus == Status::HeavyAttack || m_ScottStatus == Status::JumpKick || m_ScottStatus == Status::Uppercut || m_ScottStatus == Status::SpinKick)
+			if(m_ScottStatus == Status::LightAttack || m_ScottStatus == Status::HeavyAttack || m_ScottStatus == Status::JumpKick || m_ScottStatus == Status::Uppercut 
+				|| m_ScottStatus == Status::SpinKick || m_ScottStatus == Status::PickUp || m_ScottStatus == Status::PickUpAttack || m_ScottStatus == Status::PickUpThrow)
 			{
+				if(m_ScottStatus == Status::PickUp) m_FrameNR = 8.f;
 				m_IsAttacking = false;
 				m_IsJumpKicking = false;
 				/*std::cout << "Attacking is false." << std::endl;*/
@@ -566,6 +602,51 @@ void ScottPilgrim::UpdatePositionDuringJump(float elapsedSec, bool isAttacking)
 	}
 }
 
+void ScottPilgrim::UpdatePositionDuringFall(float elapsedSec)
+{
+	float HitboxHeight{ m_Height - m_Height / 6.f };
+
+	if (m_Velocity.y > 580.f) m_FrameNR = 0;
+	else if (m_Velocity.y > 300.f) m_FrameNR = 1;
+	else if (m_Velocity.y > 150.f) m_FrameNR = 2;
+	else if (m_Velocity.y > 0.f) m_FrameNR = 3;
+	else if (m_Position.y > m_InitialJumpPosition.y + 2.f * HitboxHeight / 4.f * 2.f) m_FrameNR = 4;
+	else if (m_Position.y > m_InitialJumpPosition.y) m_FrameNR = 5;
+
+	if (m_InitialJumpPosition.y < m_Position.y)
+	{
+		if (m_IsLeft == false)
+		{
+			m_Position.x -= m_Velocity.x * elapsedSec;
+			m_InitialJumpPosition.x -= m_Velocity.x * elapsedSec;
+		}
+		else
+		{
+			m_Position.x += m_Velocity.x * elapsedSec;
+			m_InitialJumpPosition.x += m_Velocity.x * elapsedSec;
+		}
+
+		m_Velocity.y -= 2000.f * elapsedSec;
+		m_Position.y += m_Velocity.y * elapsedSec;
+	}
+	else if (m_Position.y == m_InitialJumpPosition.y)
+	{
+		m_IsFalling = false;
+		m_HitFromTheFront = false;
+		m_IsDamaged = false;
+		m_IsOnTheGround = true;
+		m_ScottStatus = Status::OnTheGround;
+		m_AnimationCounter = 0.f;
+	}
+	else
+	{
+		m_FrameNR = 0;
+		m_Position.y = m_InitialJumpPosition.y;
+		m_Velocity = Vector2f{ 300.f, 150.f };
+	}
+
+}
+
 void ScottPilgrim::UpdatePositionDuringBlockHit(float elapsedSec)
 {
 	if(m_PushBackDelayCounter >= m_MAX_PUSH_BACK_DELAY)
@@ -577,6 +658,61 @@ void ScottPilgrim::UpdatePositionDuringBlockHit(float elapsedSec)
 
 	if (m_IsLeft)m_Position.x += m_Velocity.x * elapsedSec;
 	else m_Position.x -= m_Velocity.x * elapsedSec;
+}
+
+void ScottPilgrim::CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg)
+{
+
+	float yLength{ 5.f };
+
+	if (utils::Raycast(MapSvg, Point2f{ m_PlayerHitboxTransformed[1].x - 1.f, m_PlayerHitboxTransformed[1].y + yLength }, Point2f{ m_PlayerHitboxTransformed[0].x + 1.f, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo))
+	{
+		if(m_HitFromTheFront)
+		{
+			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+			else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+
+			if (m_IsHitWhileBlocking)
+			{
+				m_IsHitWhileBlocking = false;
+				m_Velocity = Vector2f{ 300.f, 150.f };
+				m_PushBackDelayCounter = 0.f;
+			}
+		}
+		else
+		{
+			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+			else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+		}
+
+	}
+	else if(m_IsFalling || m_IsJumping)
+	{
+		yLength -= m_Position.y - m_InitialJumpPosition.y;
+
+		if(utils::Raycast(MapSvg, Point2f{ m_PlayerHitboxTransformed[1].x - 1.f, m_PlayerHitboxTransformed[1].y + yLength }, Point2f{ m_PlayerHitboxTransformed[0].x + 1.f, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo))
+		{
+			if (m_HitFromTheFront)
+			{
+				if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+				else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+			}
+			else
+			{
+				if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+				else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+			}
+		}
+	}
+	
+	if ((utils::Raycast(MapSvg, Point2f{ m_PlayerHitboxTransformed[0].x, m_PlayerHitboxTransformed[0].y - 1.f }, Point2f{ m_PlayerHitboxTransformed[0].x, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo)
+		|| utils::Raycast(MapSvg, Point2f{ m_PlayerHitboxTransformed[1].x, m_PlayerHitboxTransformed[1].y - 1.f }, Point2f{ m_PlayerHitboxTransformed[1].x, m_PlayerHitboxTransformed[1].y + yLength }, m_Hitinfo))
+		&& m_IsFalling == false && m_IsJumping == false)
+	{
+		if(m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 6.f;
+		else m_Position.y = m_Hitinfo.intersectPoint.y;
+	}
+	
 }
 
 void ScottPilgrim::CheckKeys(float elapsedSec, bool moveRight, bool moveLeft, bool moveUp, bool moveDown)
@@ -626,34 +762,42 @@ void ScottPilgrim::CheckKeys(float elapsedSec, bool moveRight, bool moveLeft, bo
 			}
 		}
 		
-		if(m_Position.y <= -3.0f)
-		{
-			m_Position.y = -3.0f;
-		}
-		else if (m_Position.y >= 430.0f)
-		{
-			m_Position.y = 430.0f;
-		}
+		//if(m_Position.y <= -3.0f)
+		//{
+		//	m_Position.y = -3.0f;
+		//}
+		//else if (m_Position.y >= 430.0f)
+		//{
+		//	m_Position.y = 430.0f;
+		//}
 
-		if(m_Position.x <= 0.0f)
-		{
-			m_Position.x = 0.0f;
-		}
+		//if(m_Position.x <= 0.0f)
+		//{
+		//	m_Position.x = 0.0f;
+		//}
 	}
 }
 
 void ScottPilgrim::Attack(bool lightAttack, bool heavyAttack, bool jumpAttack, bool uppercut)
 {
 	ResetFrame();
-	if (lightAttack)	m_ScottStatus = Status::LightAttack;
-	else if (heavyAttack && m_HeavyAttackCounter == 1) m_ScottStatus = Status::SpinKick;
-	else if (heavyAttack) m_ScottStatus = Status::HeavyAttack;
-	else if(uppercut) m_ScottStatus = Status::Uppercut;
-	else if (jumpAttack)
+	if(m_HasPickUpObject)
 	{
-		m_ScottStatus = Status::JumpKick;
-		m_IsJumpKicking = true;
-		m_AnimationCounter = 0.f;
+		if (lightAttack) m_ScottStatus = Status::PickUpAttack;
+		else if (heavyAttack) m_ScottStatus = Status::PickUpThrow;
+	}
+	else
+	{
+		if (lightAttack)	m_ScottStatus = Status::LightAttack;
+		else if (heavyAttack && m_HeavyAttackCounter == 1) m_ScottStatus = Status::SpinKick;
+		else if (heavyAttack) m_ScottStatus = Status::HeavyAttack;
+		else if (uppercut) m_ScottStatus = Status::Uppercut;
+		else if (jumpAttack)
+		{
+			m_ScottStatus = Status::JumpKick;
+			m_IsJumpKicking = true;
+			m_AnimationCounter = 0.f;
+		}
 	}
 	ResetFrame();
 	m_IsAttacking = true;
@@ -698,7 +842,7 @@ void ScottPilgrim::ResetSprite() const
 
 bool ScottPilgrim::CheckIdle() const
 {
-	if(m_IsAttacking || m_IsJumping || m_IsFalling || m_IsOnTheGround || m_IsDamaged || m_IsGettingUp || m_IsBlocking || m_IsUnblocking)
+	if(m_IsAttacking || m_IsJumping || m_IsFalling || m_IsOnTheGround || m_IsDamaged || m_IsGettingUp || m_IsBlocking || m_IsUnblocking || m_IsPickingUp)
 	{
 		return false;
 	}
@@ -715,7 +859,7 @@ bool ScottPilgrim::CheckIfAttackBoxIsOn() const
 
 void ScottPilgrim::LightAttackCounterIncrement(bool IsHit)
 {
-	if(IsHit)
+	if(IsHit && m_HasPickUpObject == false)
 	{
 		m_DidLightAttackHit = true;
 		/*std::cout << "Hit: " << m_LightAttackCounter << std::endl;*/
@@ -725,7 +869,7 @@ void ScottPilgrim::LightAttackCounterIncrement(bool IsHit)
 
 void ScottPilgrim::HeavyAttackCounterIncrement(bool IsHit)
 {
-	if(IsHit)
+	if(IsHit && m_HasPickUpObject == false)
 	{
 		m_DidHeavyAttackHit = true;
 		m_HeavyAttackDelayCounter = 0.f;
@@ -745,6 +889,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 				m_PushBackDelayCounter = 0.f;
 				m_IsHitWhileBlocking = true;
 				if (EnemyIsLeft == m_IsLeft) m_IsLeft = !m_IsLeft;
+				else m_HitFromTheFront = true;
 			}
 			else
 			{
@@ -757,7 +902,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 					ResetFrame();
 					--m_Health;
 					m_IsAttacking = false;
-
+					m_HasPickUpObject = false;
 					if(m_IsJumping)
 					{
 						if(GetThrownInTheAir)
@@ -771,8 +916,11 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 						m_Position.y += 5.f;
 						m_IsJumping = false;
 						m_IsFalling = true;
+						m_IsDamaged = true;
 
 						if (EnemyIsLeft == m_IsLeft) m_Velocity.x = -m_Velocity.x;
+						else m_HitFromTheFront = true;
+
 					}
 					else if (m_Health == 0)
 					{
@@ -783,8 +931,10 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 						m_Position.y += 5.f;
 						m_IsFalling = true;
 						m_IsAlive = false;
+						m_IsDamaged = true;
 
 						if (EnemyIsLeft == m_IsLeft) m_Velocity.x = -m_Velocity.x;
+						else m_HitFromTheFront = true;
 
 					}
 					else if (GetThrownInTheAir)
@@ -797,8 +947,10 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 						m_Velocity.x = THROWBACK_SPEED;
 						m_Position.y += 5.f;
 						m_IsFalling = true;
+						m_IsDamaged = true;
 
 						if (EnemyIsLeft == m_IsLeft) m_Velocity.x = -m_Velocity.x;
+						else m_HitFromTheFront = true;
 					}
 					else
 					{
@@ -817,19 +969,22 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 
 void ScottPilgrim::Block(bool Unblock)
 {
-	m_ScottStatus = Status::Block;
-	m_AnimationCounter = 0.f;
+	if(m_HasPickUpObject == false)
+	{
+		m_ScottStatus = Status::Block;
+		m_AnimationCounter = 0.f;
 
-	if(Unblock == false)
-	{
-		m_IsBlocking = true;
-		m_IsUnblocking = false;
-		m_FrameNR = 0.f;
-	}
-	else
-	{
-		m_IsUnblocking = true;
-		m_IsBlocking = false;
+		if (Unblock == false)
+		{
+			m_IsBlocking = true;
+			m_IsUnblocking = false;
+			m_FrameNR = 0.f;
+		}
+		else
+		{
+			m_IsUnblocking = true;
+			m_IsBlocking = false;
+		}
 	}
 }
 
@@ -849,9 +1004,39 @@ bool ScottPilgrim::GetIsRunningTrigger() const
 	return m_IsRunningTrigger;
 }
 
+bool ScottPilgrim::GetIsLeft() const
+{
+	return m_IsLeft;
+}
+
+bool ScottPilgrim::GetHasPickedUpAnObject() const
+{
+	return m_HasPickUpObject;
+}
+
+bool ScottPilgrim::GetIsDamaged() const
+{
+	return m_IsDamaged;
+}
+
+bool ScottPilgrim::GetFlipBox() const
+{
+	return m_FlipObject;
+}
+
+bool ScottPilgrim::GetThrowObject() const
+{
+	return m_ThrowObject;
+}
+
 int ScottPilgrim::GetHeavyAttackCounter() const
 {
 	return m_HeavyAttackCounter;
+}
+
+int ScottPilgrim::GetObjectRumble() const
+{
+	return m_ObjectRumble;
 }
 
 Point2f ScottPilgrim::GetPosition() const
@@ -880,19 +1065,29 @@ void ScottPilgrim::ResetFrame()
 {
 	if(m_ChangedState != m_ScottStatus)
 	{
-		if(m_ScottStatus == Status::LightAttack)
+		if (m_HasPickUpObject)
 		{
-			if (m_LightAttackCounter == 1)
-			{
-				m_FrameNR = 3.f;
-			}
-			else if (m_LightAttackCounter == 2 || m_LightAttackCounter == 3)
-			{
-				m_FrameNR = 7.f;
-			}
+			if (m_ScottStatus == Status::Idle) m_FrameNR = 8.f;
+			else if (m_ScottStatus == Status::MovingRight || m_ScottStatus == Status::MovingLeft) m_FrameNR = 6.f;
+			else if (m_ScottStatus == Status::RunningRight || m_ScottStatus == Status::RunningLeft) m_FrameNR = 7.f;
 			else  m_FrameNR = 0.f;
 		}
-		else m_FrameNR = 0.f;
+		else
+		{
+			if (m_ScottStatus == Status::LightAttack)
+			{
+				if (m_LightAttackCounter == 1)
+				{
+					m_FrameNR = 3.f;
+				}
+				else if (m_LightAttackCounter == 2 || m_LightAttackCounter == 3)
+				{
+					m_FrameNR = 7.f;
+				}
+				else  m_FrameNR = 0.f;
+			}
+			else m_FrameNR = 0.f;
+		}
 
 		m_ChangedState = m_ScottStatus;
 	}
@@ -904,61 +1099,10 @@ void ScottPilgrim::SetIsRunningTrigger(bool IsRunningTrigger)
 	//std::cout << "RunningTrigger: " << m_IsRunningTrigger << std::endl;
 }
 
-
-//void ScottPilgrim::CheckKeys(float elapsedSec, bool KeyPressed)
-//{
-//	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
-//
-//	if ((m_IsAttacking == false) && KeyPressed)
-//	{
-//		ResetFrame();
-//
-//		//Check Keys
-//		
-//		if (pStates[SDL_SCANCODE_UP])
-//		{
-//			m_ScottStatus = Status::MovingRight;
-//			m_Position.y += m_Velocity.y * elapsedSec;
-//		}
-//		if (pStates[SDL_SCANCODE_DOWN])
-//		{
-//			m_ScottStatus = Status::MovingLeft;
-//			m_Position.y -= m_Velocity.y * elapsedSec;
-//		}
-//		if (pStates[SDL_SCANCODE_LEFT])
-//		{
-//			m_ScottStatus = Status::MovingLeft;
-//			m_IsLeft = true;
-//			m_Position.x -= m_Velocity.x * elapsedSec;
-//		}
-//		if (pStates[SDL_SCANCODE_RIGHT])
-//		{
-//			m_ScottStatus = Status::MovingRight;
-//			m_IsLeft = false;
-//			m_Position.x += m_Velocity.x * elapsedSec;
-//		}
-//		if (pStates[SDL_SCANCODE_J])
-//		{
-//			Attack(true);
-//		}
-//
-//		if (m_Position.y <= -3.0f)
-//		{
-//			m_Position.y = -3.0f;
-//		}
-//		else if (m_Position.y >= 430.0f)
-//		{
-//			m_Position.y = 430.0f;
-//		}
-//
-//		if (m_Position.x <= 0.0f)
-//		{
-//			m_Position.x = 0.0f;
-//		}
-//
-//	}
-//	else
-//	{
-//		m_ScottStatus = Status::Idle;
-//	}
-//}
+void ScottPilgrim::HasPickedUpObject(bool HasPickUp)
+{
+	m_ScottStatus = Status::PickUp;
+	ResetFrame();
+	m_HasPickUpObject = HasPickUp;
+	m_IsPickingUp = true;
+}

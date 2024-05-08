@@ -15,7 +15,7 @@ public:
 	Type m_CoinType;
 
 	Coins(Point2f position, float size, Type coin);
-	~Coins();
+	~Coins() noexcept;
 
 	Coins(const Coins& other);
 	Coins& operator=(const Coins& other);
