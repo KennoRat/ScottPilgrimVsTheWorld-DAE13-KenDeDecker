@@ -13,6 +13,11 @@ public:
 	ScottPilgrim(Point2f position, float width, float height);
 	~ScottPilgrim() noexcept;
 
+	ScottPilgrim(const ScottPilgrim& other);
+	ScottPilgrim& operator=(const ScottPilgrim& other);
+	ScottPilgrim(ScottPilgrim&& other) noexcept;
+	ScottPilgrim& operator=(ScottPilgrim&& other) noexcept;
+
 	void Draw() const;
 	void Update(float elapsedSec, const std::vector<Point2f>& MapSvg);
 	/*void CheckKeys(float elapsedSec, bool KeyPressed = false);*/
@@ -23,7 +28,7 @@ public:
 	bool CheckIfAttackBoxIsOn() const;
 	void LightAttackCounterIncrement(bool IsHit);
 	void HeavyAttackCounterIncrement(bool IsHit);
-	void CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsLeft, bool JustToCheckCollision = false, bool GetThrownInTheAir = false);
+	void CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsLeft, int GetDamage, bool JustToCheckCollision = false, bool GetThrownInTheAir = false);
 	void Block(bool Unblock = false);
 	void HasPickedUpObject(bool HasPickUp);
 
@@ -37,6 +42,7 @@ public:
 	bool GetThrowObject() const;
 	int GetHeavyAttackCounter() const;
 	int GetObjectRumble() const;
+	int GetHealth() const;
 	Point2f GetPosition() const;
 	float GetWidth() const;
 	std::vector<Point2f> GetAttackBox() const;

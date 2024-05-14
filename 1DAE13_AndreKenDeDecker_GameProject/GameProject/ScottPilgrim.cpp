@@ -32,7 +32,7 @@ ScottPilgrim::ScottPilgrim(Point2f position, float width, float height): m_Posit
 	m_LightAttackCounter = 0;
 	m_HeavyAttackCounter = 0;
 	m_ObjectRumble = 0;
-	m_Health = 20;
+	m_Health = 50;
 	m_Velocity = Vector2f{ 300.f, 150.f };
 	m_FrameNR = 0.f;
 	m_MaxAnimation = 0.09f;
@@ -72,6 +72,48 @@ ScottPilgrim::~ScottPilgrim()
 {
 	delete m_ptrSpriteSheet;
 	m_ptrSpriteSheet = nullptr;
+}
+
+ScottPilgrim::ScottPilgrim(const ScottPilgrim& other): ScottPilgrim(other.m_Position, other.m_Width, other.m_Height)
+{
+	m_IsLeft = other.m_IsLeft;
+	m_Health = other.m_Health;
+}
+
+ScottPilgrim& ScottPilgrim::operator=(const ScottPilgrim& other)
+{
+	if (this != &other)
+	{
+		m_Position = other.m_Position;
+		m_Width = other.m_Width;
+		m_Height = other.m_Height;
+		m_IsLeft = other.m_IsLeft;
+		m_Health = other.m_Health;
+	}
+	return *this;
+}
+
+ScottPilgrim::ScottPilgrim(ScottPilgrim&& other) noexcept 
+	: m_Position{ std::move(other.m_Position) }
+	, m_Width{ std::move(other.m_Width) }
+	, m_Height{ std::move(other.m_Height) }
+	, m_Health{ std::move(other.m_Health) }
+{
+	other.m_ptrSpriteSheet = nullptr;
+}
+
+ScottPilgrim& ScottPilgrim::operator=(ScottPilgrim&& other) noexcept
+{
+	if (this != &other)
+	{
+		m_Position = std::move(other.m_Position);
+		m_Width = std::move(other.m_Width);
+		m_Height = std::move(other.m_Height);
+		m_IsLeft = std::move(other.m_IsLeft);
+		m_Health = std::move(other.m_Health);
+		other.m_ptrSpriteSheet = nullptr;
+	}
+	return *this;
 }
 
 void ScottPilgrim::Draw() const
@@ -876,7 +918,7 @@ void ScottPilgrim::HeavyAttackCounterIncrement(bool IsHit)
 	}
 }
 
-void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLeft, bool JustToCheckCollision, bool GetThrownInTheAir)
+void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsLeft, int GetDamage, bool JustToCheckCollision, bool GetThrownInTheAir)
 {
 	if (m_IsAlive)
 	{
@@ -900,7 +942,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 				else
 				{
 					ResetFrame();
-					--m_Health;
+					m_Health -= GetDamage;
 					m_IsAttacking = false;
 					m_HasPickUpObject = false;
 					if(m_IsJumping)
@@ -922,7 +964,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox,bool EnemyIsLe
 						else m_HitFromTheFront = true;
 
 					}
-					else if (m_Health == 0)
+					else if (m_Health <= 0)
 					{
 						const float JUMP_SPEED{ 1000.f };
 						m_ScottStatus = Status::Falling;
@@ -1037,6 +1079,11 @@ int ScottPilgrim::GetHeavyAttackCounter() const
 int ScottPilgrim::GetObjectRumble() const
 {
 	return m_ObjectRumble;
+}
+
+int ScottPilgrim::GetHealth() const
+{
+	return m_Health;
 }
 
 Point2f ScottPilgrim::GetPosition() const

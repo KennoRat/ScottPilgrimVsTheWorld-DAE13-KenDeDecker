@@ -21,11 +21,12 @@ public:
 
 	void Draw() const;
 	void Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<Point2f>& MapSvg);
-	void CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheckCollision = false, bool GetThrownInTheAir = false, bool GetUppercut = false);
+	void CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, bool JustToCheckCollision = false, bool GetThrownInTheAir = false, bool GetUppercut = false);
 
 	bool CheckIdle() const;
 	bool CheckIfAttackBoxIsOn();
 	bool GetIsDamaged() const;
+	bool GetIsBlocking() const;
 	bool GetIsColliding() const;
 	bool GetIsLeft() const;
 	bool GetSpawnCoins() const;

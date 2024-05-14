@@ -4,7 +4,7 @@
 #include "EnemyMike.h"
 #include "Camera.h"
 #include "Coins.h"
-#include "Wallet.h"
+#include "PlayerUI.h"
 #include <iostream>
 #include "Objects.h"
 #include <SVGParser.h>
@@ -67,7 +67,7 @@ private:
 	ScottPilgrim* m_ptrPlayer;
 	Texture* m_ptrMap;
 	Camera* m_ptrCamera;
-	Wallet* m_ptrWallet;
+	PlayerUI* m_ptrPlayerUI;
 	Objects* m_ptrTestObject;
 
 	//EnemyMike* m_ptrTestEnemy;

@@ -26,7 +26,7 @@ EnemyMike::EnemyMike(Point2f position, float width, float height): m_Position{po
 	m_IsStunned = false;
 	m_BeDrawn = true;
 	m_SpawnCoins = false;
-	m_Health = 10;
+	m_Health = 20;
 	m_GotLightHitAmount = 0;
 	m_Velocity = Vector2f{ 200.f, 150.f };
 	m_FrameNR = 0.f;
@@ -107,6 +107,7 @@ EnemyMike::EnemyMike(EnemyMike&& other) noexcept
 	: m_Position{ std::move(other.m_Position) }
 	, m_Width{ std::move(other.m_Width) }
 	, m_Height{ std::move(other.m_Height) }
+	, m_Health{ std::move(other.m_Health)}
 {
 	other.m_ptrSpriteSheet = nullptr;
 }
@@ -484,7 +485,6 @@ void EnemyMike::UpdateKeepBlocking(float elapsedSec)
 	{
 		std::cout << "Stop Blocking" << std::endl;
 		m_IsBlocking = false;
-		m_IsDamaged = false;
 		m_BlockingCounter -= m_MAX_BLOCKING_DELAY;
 	}
 
@@ -583,7 +583,7 @@ void EnemyMike::Block()
 	m_EnemyStatus = Status::Block;
 
 	m_IsBlocking = true;
-	m_IsDamaged = true;
+	m_IsDamaged = false;
 }
 
 void EnemyMike::CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg)
@@ -649,7 +649,7 @@ void EnemyMike::ResetSprite() const
 	glPopMatrix();
 }
 
-void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheckCollision, bool GetThrownInTheAir, bool GetUppercut)
+void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, bool JustToCheckCollision, bool GetThrownInTheAir, bool GetUppercut)
 {
 
 	if(m_IsDamaged == false && m_IsAlive && m_EnemyStatus != Status::OnTheGround)
@@ -670,12 +670,12 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, bool JustToCheck
 				else
 				{
 					ResetFrame();
-					--m_Health;
+					m_Health -= GetDamage;
 					m_IsMoving = false;
 					m_IsAttacking = false;
 					m_IsAggressive = false;
 
-					if (m_Health == 0) m_IsAlive = false;
+					if (m_Health <= 0) m_IsAlive = false;
 
 					if (m_IsAlive == false && GetUppercut == false && GetThrownInTheAir == false)
 					{
@@ -739,6 +739,11 @@ bool EnemyMike::CheckIdle() const
 bool EnemyMike::GetIsDamaged() const
 {
 	return m_IsDamaged;
+}
+
+bool EnemyMike::GetIsBlocking() const
+{
+	return m_IsBlocking;
 }
 
 bool EnemyMike::GetIsColliding() const

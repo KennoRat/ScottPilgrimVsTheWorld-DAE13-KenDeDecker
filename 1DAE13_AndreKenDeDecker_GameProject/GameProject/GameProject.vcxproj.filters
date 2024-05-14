@@ -19,6 +19,9 @@
     <Filter Include="Source Files\MyClasses\Effects">
       <UniqueIdentifier>{5ace934e-ab31-4fc2-bdbf-8c6e1dc54ceb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\MyClasses\Objects">
+      <UniqueIdentifier>{7c82b99f-cb2a-4f8a-8d70-608ab34adc65}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp">
@@ -30,26 +33,26 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ScottPilgrim.cpp">
-      <Filter>Source Files\MyClasses</Filter>
-    </ClCompile>
     <ClCompile Include="Camera.cpp">
       <Filter>Source Files\MyClasses</Filter>
     </ClCompile>
-    <ClCompile Include="EnemyMike.cpp">
-      <Filter>Source Files\MyClasses</Filter>
-    </ClCompile>
-    <ClCompile Include="Coins.cpp">
-      <Filter>Source Files\MyClasses</Filter>
-    </ClCompile>
-    <ClCompile Include="Objects.cpp">
-      <Filter>Source Files\MyClasses</Filter>
-    </ClCompile>
-    <ClCompile Include="Wallet.cpp">
+    <ClCompile Include="PlayerUI.cpp">
       <Filter>Source Files\MyClasses\Effects</Filter>
     </ClCompile>
     <ClCompile Include="DamageNumbers.cpp">
       <Filter>Source Files\MyClasses\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Coins.cpp">
+      <Filter>Source Files\MyClasses\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyMike.cpp">
+      <Filter>Source Files\MyClasses\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="Objects.cpp">
+      <Filter>Source Files\MyClasses\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="ScottPilgrim.cpp">
+      <Filter>Source Files\MyClasses\Objects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -59,26 +62,26 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ScottPilgrim.h">
-      <Filter>Source Files\MyClasses</Filter>
-    </ClInclude>
     <ClInclude Include="Camera.h">
       <Filter>Source Files\MyClasses</Filter>
     </ClInclude>
-    <ClInclude Include="EnemyMike.h">
-      <Filter>Source Files\MyClasses</Filter>
-    </ClInclude>
-    <ClInclude Include="Coins.h">
-      <Filter>Source Files\MyClasses</Filter>
-    </ClInclude>
-    <ClInclude Include="Objects.h">
-      <Filter>Source Files\MyClasses</Filter>
-    </ClInclude>
-    <ClInclude Include="Wallet.h">
+    <ClInclude Include="PlayerUI.h">
       <Filter>Source Files\MyClasses\Effects</Filter>
     </ClInclude>
     <ClInclude Include="DamageNumbers.h">
       <Filter>Source Files\MyClasses\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Coins.h">
+      <Filter>Source Files\MyClasses\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyMike.h">
+      <Filter>Source Files\MyClasses\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="Objects.h">
+      <Filter>Source Files\MyClasses\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="ScottPilgrim.h">
+      <Filter>Source Files\MyClasses\Objects</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -6,7 +6,7 @@
 class DamageNumbers
 {
 public:
-	DamageNumbers(Point2f position, float Size, int number);
+	DamageNumbers(Point2f position, float Size, int number, bool Kapow = false);
 	~DamageNumbers() noexcept;
 
 	DamageNumbers(const DamageNumbers& other);
@@ -21,10 +21,13 @@ public:
 
 private:
 	static Texture* m_ptrSpriteSheet;
+	static Texture* m_ptrKapowSprite;
 	static int m_InstanceCounter;
 
 	Point2f m_Position;
 	bool m_IsDone;
+	bool m_IsKapowEffect;
+	int m_Rumble;
 	int m_FrameNR;
 	float m_Size;
 	const float m_VELOCITY_Y{100.f};

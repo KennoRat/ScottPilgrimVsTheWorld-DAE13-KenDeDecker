@@ -60,14 +60,14 @@ void Objects::Update(float elapsedSec, Point2f Position, bool IsLeft, const std:
 	UpdateXPosition(elapsedSec);
 	UpdateYPosition(elapsedSec);
 
-	if(m_IsPickedUp)
-	{
-		m_Position = Position;
-	}
-
+	if(m_IsPickedUp) m_Position = Position;
+	
 	m_IsLeft = IsLeft;
 
 	CheckIfGoingOutOfBounds(MapSvg);
+
+
+
 }
 
 void Objects::Update(float elapsedSec, const std::vector<Point2f>& MapSvg)

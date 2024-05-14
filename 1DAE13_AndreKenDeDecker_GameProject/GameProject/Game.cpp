@@ -26,7 +26,7 @@ void Game::Initialize( )
 	m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1200.f, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT));
 	//m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f + 100.f }, 300.f, 225.f));
 
-	m_ptrWallet = new Wallet(70.f);
+	m_ptrPlayerUI = new PlayerUI(70.f);
 
 	m_ptrTestObject = new Objects(Point2f{ 1000.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f);
 }
@@ -39,8 +39,8 @@ void Game::Cleanup( )
 	m_ptrMap = nullptr;
 	delete m_ptrCamera;
 	m_ptrCamera = nullptr;
-	delete m_ptrWallet;
-	m_ptrWallet = nullptr;
+	delete m_ptrPlayerUI;
+	m_ptrPlayerUI = nullptr;
 	
 	for (EnemyMike* Enemies : m_ptrEnemies)
 	{
@@ -141,7 +141,7 @@ void Game::Update(float elapsedSec)
 				//std::cout << "Scott is Hitting" << std::endl;
 				if (m_PlayerUppercutAttack)
 				{
-					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), false, false, true);
+					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 6, false, false, true);
 					if (Enemies->GetIsDamaged())
 					{
 						m_ptrPlayer->LightAttackCounterIncrement(true);
@@ -150,7 +150,9 @@ void Game::Update(float elapsedSec)
 				}
 				else
 				{
-					Enemies->CheckHit(m_ptrPlayer->GetAttackBox());
+					if (m_ptrPlayer->GetHasPickedUpAnObject()) Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 7);
+					else Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 2);
+
 					if (Enemies->GetIsDamaged())
 					{
 						if(m_ptrPlayer->GetHasPickedUpAnObject()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 7));
@@ -167,7 +169,7 @@ void Game::Update(float elapsedSec)
 			{
 				if (m_ptrPlayer->GetHeavyAttackCounter() == 1)
 				{
-					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), false, true);
+					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 5, false, true);
 					if (Enemies->GetIsDamaged())
 					{
 						m_ptrPlayer->HeavyAttackCounterIncrement(true);
@@ -176,7 +178,7 @@ void Game::Update(float elapsedSec)
 				}
 				else
 				{
-					Enemies->CheckHit(m_ptrPlayer->GetAttackBox());
+					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 4);
 					if (Enemies->GetIsDamaged())
 					{
 						m_ptrPlayer->HeavyAttackCounterIncrement(true);
@@ -184,6 +186,16 @@ void Game::Update(float elapsedSec)
 					}
 				}
 			}
+
+			if (Enemies->GetHealth() <= 0 && Enemies->GetIsDamaged() && (m_PlayerLightAttacked || m_PlayerHeavyAttacked))
+			{
+				Point2f DAMAGE_POSITION_KAPOW;
+				if (Enemies->GetIsLeft()) DAMAGE_POSITION_KAPOW = Point2f{ Enemies->GetPosition().x - m_ENEMY_WIDTH / 5.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT / 2.f };
+				else DAMAGE_POSITION_KAPOW = Point2f{ Enemies->GetPosition().x + m_ENEMY_WIDTH / 5.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT / 2.f };
+				
+				m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_KAPOW, m_DAMAGE_SIZE, 0, true));
+			}
+
 
 			if (Enemies == m_ptrEnemies.back())
 			{
@@ -196,8 +208,18 @@ void Game::Update(float elapsedSec)
 		if (Enemies->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
 		{
 			//std::cout << "Enemy is Hitting" << std::endl;
-			if (Enemies->m_EnemyStatus == EnemyMike::Status::LightAttack) m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft());
-			else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick) m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), false, true);
+			const Point2f DAMAGE_POSITION_PLAYER{ Point2f{ m_ptrPlayer->GetPosition().x + m_PLAYER_WIDTH / 4.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 3.f * 2.f}};
+
+			if (Enemies->m_EnemyStatus == EnemyMike::Status::LightAttack)
+			{
+				m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 2);
+				if(m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 2));
+			}
+			else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick)
+			{
+				m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 6, false, true);
+				if (m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
+			}
 		}
 
 		if (Enemies->CheckIdle())
@@ -207,15 +229,16 @@ void Game::Update(float elapsedSec)
 			Enemies->m_EnemyStatus = EnemyMike::Status::Idle;
 		}
 
-		if (m_ptrTestObject->GetDoDamage() && (m_ptrTestObject->GetFallYPosition() >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrTestObject->GetFallYPosition() <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
+		if (Enemies->GetHealth() > 0 && m_ptrTestObject->GetDoDamage() && (m_ptrTestObject->GetFallYPosition() >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrTestObject->GetFallYPosition() <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
 		{
-			Enemies->CheckHit(m_ptrTestObject->GetHitbox());
-			Enemies->CheckHit(m_ptrPlayer->GetAttackBox());
+			Enemies->CheckHit(m_ptrTestObject->GetHitbox(), 6);
+			Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 6);
 			if (Enemies->GetIsDamaged())
 			{
 				m_ptrTestObject->ObjectHit(true);
 				m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 6));
 			}
+			else if(Enemies->GetIsBlocking()) m_ptrTestObject->ObjectHit(true);
 		}
 	}
 
@@ -279,13 +302,14 @@ void Game::Update(float elapsedSec)
 
 	}
 
-	// Wallet Update
+	// PlayerUI Update
 	if (m_DoShowWallet)
 	{
 		m_ShowWalletCounter += elapsedSec;
 		ShowWallet();
-		m_ptrWallet->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - 50.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 4.f * 3.f }, m_AboveDecimalPoint, m_BelowDecimalPoint);
+		m_ptrPlayerUI->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - 50.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 4.f * 3.f }, m_AboveDecimalPoint, m_BelowDecimalPoint);
 	}
+	m_ptrPlayerUI->SetPlayerHealth(m_ptrPlayer->GetHealth());
 
 	// DamageNumbers Update
 	for (DamageNumbers* Damage : m_ptrDamageNumbers)
@@ -321,6 +345,8 @@ void Game::Draw( ) const
 	Rectf dstRectfMap{ 0.f, 0.f, m_ptrMap->GetWidth() * 3.3f, GetViewPort().height * 1.3f };
 	Rectf srcRectMap{ 10.f, -63.f, m_ptrMap->GetWidth(), 280.f };
 
+
+
 	//Camera
 	m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, Point2f{ m_ptrPlayer->GetPosition().x + m_ptrPlayer->GetWidth() / 2.f , m_ptrPlayer->GetPosition().y });
 
@@ -328,6 +354,7 @@ void Game::Draw( ) const
 	m_ptrMap->Draw(dstRectfMap, srcRectMap);
 	utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
 	utils::DrawPolygon(m_TransformSvg);
+
 
 	//Coins 
 	for (Coins* Money : m_ptrCoins)
@@ -340,10 +367,10 @@ void Game::Draw( ) const
 	//Draw Player and Enemies depending on Y-axis
 	QuicksortDraw();
 
-	//Draw Wallet
+	//Draw PlayerUI
 	if (m_DoShowWallet)
 	{
-		m_ptrWallet->Draw();
+		m_ptrPlayerUI->Draw();
 	}
 
 	//Draw Damage
@@ -354,7 +381,9 @@ void Game::Draw( ) const
 
 	//Camera
 	m_ptrCamera->Reset();
-
+	
+	//Draw PlayerUI
+	m_ptrPlayerUI->DrawUI();
 }
 
 void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
@@ -367,9 +396,9 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 		{
 			for (EnemyMike* Enemies : m_ptrEnemies)
 			{
-				if ((Enemies->GetHealth() == 1 || Enemies->GetGotLightHitAmount() == 3 )&& m_ptrPlayer->GetIsJumping() == false && m_PlayerUppercutAttack == false && m_ptrPlayer->GetHasPickedUpAnObject() == false)
+				if ((Enemies->GetHealth() <= 2 || Enemies->GetGotLightHitAmount() == 3 )&& m_ptrPlayer->GetIsJumping() == false && m_PlayerUppercutAttack == false && m_ptrPlayer->GetHasPickedUpAnObject() == false)
 				{
-					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), true);
+					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), 0, true);
 					if (Enemies->GetIsColliding())
 					{
 						m_ptrPlayer->Attack(false, false, false, true);
