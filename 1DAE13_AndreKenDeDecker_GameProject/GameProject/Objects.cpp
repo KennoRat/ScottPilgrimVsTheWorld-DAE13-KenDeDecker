@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "Objects.h"
 
+Texture* Objects::m_ptrSpriteSheet{ nullptr };
+int Objects::m_InstanceCounter{ 0 };
+
 Objects::Objects(Point2f Position, float Width, float Height): m_Position{Position}, m_Width{Width}, m_Height{Height}
 {
 	m_IsInTheAir = false;
@@ -17,19 +20,32 @@ Objects::Objects(Point2f Position, float Width, float Height): m_Position{Positi
 	m_FallYPosition = 0.f;
 	m_SlideCounter = 0.f;
 
+	m_ptrPlayer = nullptr;
+	m_ptrEnemy = nullptr;
 
 	m_HitboxOrigin.push_back(Point2f{0.f, 0.f});
 	m_HitboxOrigin.push_back(Point2f{m_Width, 0.f});
 	m_HitboxOrigin.push_back(Point2f{m_Width, m_Height});
 	m_HitboxOrigin.push_back(Point2f{ 0.f, m_Height });
 
-	m_ptrSpriteSheet = new Texture("RecyclingBox_Sprite.png");
+	++m_InstanceCounter;
+
+	if (m_InstanceCounter == 1)
+	{
+		m_ptrSpriteSheet = new Texture("RecyclingBox_Sprite.png");
+	}
 }
 
 Objects::~Objects()
 {
-	delete m_ptrSpriteSheet;
-	m_ptrSpriteSheet = nullptr;
+
+	if (m_InstanceCounter == 1)
+	{
+		delete m_ptrSpriteSheet;
+		m_ptrSpriteSheet = nullptr;
+	}
+
+	--m_InstanceCounter;
 }
 
 void Objects::Draw() const
@@ -45,7 +61,7 @@ void Objects::Draw() const
 	utils::DrawPolygon(m_HitboxTransformed);
 }
 
-void Objects::Update(float elapsedSec, Point2f Position, bool IsLeft, const std::vector<Point2f>& MapSvg)
+void Objects::Update(float elapsedSec, const Point2f& Position, bool IsLeft, const std::vector<Point2f>& MapSvg)
 {
 	// Transform Hitboxes
 	Matrix2x3 TranslationMat{};
@@ -94,18 +110,29 @@ void Objects::Collision(const std::vector<Point2f>& Hitbox, bool IsLeft)
 	}
 }
 
-void Objects::PickUp(const std::vector<Point2f>& Hitbox)
+void Objects::PickUpPlayer(const std::vector<Point2f>& Hitbox, ScottPilgrim* Player)
 {
 	if (utils::Raycast(Hitbox, Point2f(m_HitboxTransformed[2]), Point2f(m_HitboxTransformed[3]), m_Hitinfo))
 	{
 		m_IsPickedUp = true;
+		m_ptrPlayer = Player;
 	}
 }
 
-void Objects::DroppedObject(bool IsPickedUp, float YPosition)
+void Objects::PickUpEnemy(const std::vector<Point2f>& Hitbox, EnemyMike* Enemy)
+{
+	if (utils::Raycast(Hitbox, Point2f(m_HitboxTransformed[2]), Point2f(m_HitboxTransformed[3]), m_Hitinfo))
+	{
+		m_ptrEnemy = Enemy;
+		m_IsPickedUp = true;
+	}
+}
+
+void Objects::DroppedObject(float YPosition)
 {
 	std::cout << "Object Dropped" << std::endl;
-	m_IsPickedUp = IsPickedUp;
+	m_IsPickedUp = false;
+	m_IsFlipped = false;
 	m_FallYPosition = YPosition;
 	m_IsInTheAir = true;
 }
@@ -134,6 +161,12 @@ void Objects::ObjectHit(bool IsHit)
 	}
 }
 
+bool Objects::CheckIfOverlapping(const std::vector<Point2f>& Hitbox)
+{
+	if (utils::Raycast(Hitbox, Point2f(m_HitboxTransformed[2]), Point2f(m_HitboxTransformed[3]), m_Hitinfo)) return true;
+	else return false;
+}
+
 bool Objects::GetIsPickedUp() const
 {
 	return m_IsPickedUp;
@@ -147,6 +180,11 @@ bool Objects::GetIsFlipped() const
 bool Objects::GetDoDamage() const
 {
 	return m_DoDamage;
+}
+
+bool Objects::GetIsLeft() const
+{
+	return m_IsLeft;
 }
 
 int Objects::GetRumble() const
@@ -167,6 +205,16 @@ Point2f Objects::GetPosition() const
 std::vector<Point2f> Objects::GetHitbox() const
 {
 	return m_HitboxTransformed;
+}
+
+ScottPilgrim* Objects::GetPlayer() const
+{
+	return m_ptrPlayer;
+}
+
+EnemyMike* Objects::GetEnemy() const
+{
+	return m_ptrEnemy;
 }
 
 void Objects::SetIsFlipped(bool IsFlipped)
@@ -267,6 +315,8 @@ void Objects::UpdateYPosition(float elapsedSec)
 			m_IsPickedUp = false;
 			m_IsInTheAir = false;
 			m_DoDamage = false;
+			m_ptrPlayer = nullptr;
+			m_ptrEnemy = nullptr;
 			if(m_Velocity.x > 200.f || m_Velocity.x < -200.f)
 			{
 				if(m_IsLeft) m_Velocity.x = -300.f;

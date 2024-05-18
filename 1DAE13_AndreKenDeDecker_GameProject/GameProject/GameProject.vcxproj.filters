@@ -22,6 +22,9 @@
     <Filter Include="Source Files\MyClasses\Objects">
       <UniqueIdentifier>{7c82b99f-cb2a-4f8a-8d70-608ab34adc65}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\MyClasses\Objects\Enemies">
+      <UniqueIdentifier>{5bef4393-b004-4e4f-a5f7-c0107cb0ac90}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp">
@@ -45,14 +48,17 @@
     <ClCompile Include="Coins.cpp">
       <Filter>Source Files\MyClasses\Objects</Filter>
     </ClCompile>
-    <ClCompile Include="EnemyMike.cpp">
-      <Filter>Source Files\MyClasses\Objects</Filter>
-    </ClCompile>
     <ClCompile Include="Objects.cpp">
       <Filter>Source Files\MyClasses\Objects</Filter>
     </ClCompile>
     <ClCompile Include="ScottPilgrim.cpp">
       <Filter>Source Files\MyClasses\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyMike.cpp">
+      <Filter>Source Files\MyClasses\Objects\Enemies</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyLee.cpp">
+      <Filter>Source Files\MyClasses\Objects\Enemies</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -74,14 +80,17 @@
     <ClInclude Include="Coins.h">
       <Filter>Source Files\MyClasses\Objects</Filter>
     </ClInclude>
-    <ClInclude Include="EnemyMike.h">
-      <Filter>Source Files\MyClasses\Objects</Filter>
-    </ClInclude>
     <ClInclude Include="Objects.h">
       <Filter>Source Files\MyClasses\Objects</Filter>
     </ClInclude>
     <ClInclude Include="ScottPilgrim.h">
       <Filter>Source Files\MyClasses\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyMike.h">
+      <Filter>Source Files\MyClasses\Objects\Enemies</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyLee.h">
+      <Filter>Source Files\MyClasses\Objects\Enemies</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@
 #include "Matrix2x3.h"
 #include <iostream>
 
+class Objects;
 
 class ScottPilgrim final
 {
@@ -30,16 +31,18 @@ public:
 	void HeavyAttackCounterIncrement(bool IsHit);
 	void CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsLeft, int GetDamage, bool JustToCheckCollision = false, bool GetThrownInTheAir = false);
 	void Block(bool Unblock = false);
-	void HasPickedUpObject(bool HasPickUp);
+	void HasPickedUpObject(bool HasPickUp, Objects* Object);
 
 	bool GetIsHit() const;
 	bool GetIsJumping() const;
 	bool GetIsRunningTrigger() const;
 	bool GetIsLeft() const;
-	bool GetHasPickedUpAnObject() const;
 	bool GetIsDamaged() const;
+	bool GetHasPickedUpAnObject() const;
 	bool GetFlipBox() const;
 	bool GetThrowObject() const;
+	bool GetIsBlocking() const;
+	bool GetIsHitWhileBlocking() const;
 	int GetHeavyAttackCounter() const;
 	int GetObjectRumble() const;
 	int GetHealth() const;
@@ -47,6 +50,7 @@ public:
 	float GetWidth() const;
 	std::vector<Point2f> GetAttackBox() const;
 	std::vector<Point2f> GetHitbox() const;
+	Objects* GetHoldingObject() const;
 
 	void SetIsRunningTrigger(bool IsRunningTrigger);
 	
@@ -117,6 +121,9 @@ private:
 	const float m_MAX_RUNNING_DELAY{ 0.35f };
 	float m_PushBackDelayCounter;
 	const float m_MAX_PUSH_BACK_DELAY{ 0.1f };
+
+	//Class Association
+	Objects* m_ptrHoldingObject;
 	
 	// Arrays
 	std::vector<Point2f> m_PlayerHitboxOnOrigin;

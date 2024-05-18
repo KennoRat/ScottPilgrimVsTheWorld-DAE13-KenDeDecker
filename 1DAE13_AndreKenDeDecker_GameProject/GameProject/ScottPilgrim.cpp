@@ -32,7 +32,7 @@ ScottPilgrim::ScottPilgrim(Point2f position, float width, float height): m_Posit
 	m_LightAttackCounter = 0;
 	m_HeavyAttackCounter = 0;
 	m_ObjectRumble = 0;
-	m_Health = 50;
+	m_Health = 99;
 	m_Velocity = Vector2f{ 300.f, 150.f };
 	m_FrameNR = 0.f;
 	m_MaxAnimation = 0.09f;
@@ -48,6 +48,9 @@ ScottPilgrim::ScottPilgrim(Point2f position, float width, float height): m_Posit
 	m_ptrSpriteSheet = new Texture("PlayerScott_Sprite.png");
 	m_ChangedState = Status::Idle;
 	m_ScottStatus = Status::Idle;
+
+	//Class Association
+	m_ptrHoldingObject = nullptr;
 
 	// Make Player Hitbox
 	float HitboxWidthLeft{m_Width / 2.f};
@@ -438,17 +441,17 @@ void ScottPilgrim::UpdateAnimation()
 				{
 					m_ThrowObject = false;
 					m_HasPickUpObject = false;
+					m_ptrHoldingObject = nullptr;
 					m_FrameNR = 0.f;
 				}
 				else m_FrameNR = 0.f;
-
 			}
 			else 
 			{
 				if (m_ScottStatus == Status::GettingUp)
 				{
-					if (m_IsLeft) m_Position.x -= 20.f;
-					else m_Position.x += 20.f;
+					//if (m_IsLeft) m_Position.x -= 20.f;
+					//else m_Position.x += 20.f;
 					m_FrameNR = 6.f;
 				}
 				else m_FrameNR = 0.f;
@@ -461,6 +464,7 @@ void ScottPilgrim::UpdateAnimation()
 			m_IsUnblocking = false;
 			m_IsPickingUp = false;
 			m_FlipObject = false;
+			m_HitFromTheFront = false;
 
 			if(m_ScottStatus == Status::LightAttack || m_ScottStatus == Status::HeavyAttack || m_ScottStatus == Status::JumpKick || m_ScottStatus == Status::Uppercut 
 				|| m_ScottStatus == Status::SpinKick || m_ScottStatus == Status::PickUp || m_ScottStatus == Status::PickUpAttack || m_ScottStatus == Status::PickUpThrow)
@@ -925,7 +929,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsL
 
 		if (utils::Raycast(Attackbox, Point2f(m_PlayerHitboxTransformed[1]), Point2f(m_PlayerHitboxTransformed[2]), m_Hitinfo) || utils::Raycast(Attackbox, Point2f(m_PlayerHitboxTransformed[0]), Point2f(m_PlayerHitboxTransformed[3]), m_Hitinfo))
 		{
-			std::cout << "Scott is Hit" << std::endl;
+			//std::cout << "Scott is Hit" << std::endl;
 			if (m_IsBlocking)
 			{
 				m_PushBackDelayCounter = 0.f;
@@ -945,6 +949,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsL
 					m_Health -= GetDamage;
 					m_IsAttacking = false;
 					m_HasPickUpObject = false;
+					m_ptrHoldingObject = nullptr;
 					if(m_IsJumping)
 					{
 						if(GetThrownInTheAir)
@@ -1071,6 +1076,16 @@ bool ScottPilgrim::GetThrowObject() const
 	return m_ThrowObject;
 }
 
+bool ScottPilgrim::GetIsBlocking() const
+{
+	return m_IsBlocking;
+}
+
+bool ScottPilgrim::GetIsHitWhileBlocking() const
+{
+	return m_IsHitWhileBlocking;
+}
+
 int ScottPilgrim::GetHeavyAttackCounter() const
 {
 	return m_HeavyAttackCounter;
@@ -1106,6 +1121,11 @@ std::vector<Point2f> ScottPilgrim::GetAttackBox() const
 std::vector<Point2f> ScottPilgrim::GetHitbox() const
 {
 	return m_PlayerHitboxTransformed;
+}
+
+Objects* ScottPilgrim::GetHoldingObject() const
+{
+	return m_ptrHoldingObject;
 }
 
 void ScottPilgrim::ResetFrame()
@@ -1146,10 +1166,12 @@ void ScottPilgrim::SetIsRunningTrigger(bool IsRunningTrigger)
 	//std::cout << "RunningTrigger: " << m_IsRunningTrigger << std::endl;
 }
 
-void ScottPilgrim::HasPickedUpObject(bool HasPickUp)
+void ScottPilgrim::HasPickedUpObject(bool HasPickUp, Objects* Object)
 {
 	m_ScottStatus = Status::PickUp;
 	ResetFrame();
 	m_HasPickUpObject = HasPickUp;
 	m_IsPickingUp = true;
+	m_IsAttackBoxOn = false;
+	m_ptrHoldingObject = Object;
 }

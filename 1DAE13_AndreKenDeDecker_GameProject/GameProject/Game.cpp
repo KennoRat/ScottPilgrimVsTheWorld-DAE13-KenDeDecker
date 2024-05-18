@@ -19,16 +19,18 @@ void Game::Initialize( )
 	m_ptrMap = new Texture("Level1_Sprite.png");
 
 	SVGParser::GetVerticesFromSvgFile("Level1_Sprite.svg", m_MapSvg);
+	SVGParser::GetVerticesFromSvgFile("CameraBorder.svg", m_CameraSvg);
 
 	m_ptrCamera = new Camera(GetViewPort().width, GetViewPort().height);
 
 	m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1200.f, GetViewPort().height / 4.f + 200.f}, m_ENEMY_WIDTH, m_ENEMY_HEIGHT));
-	m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1200.f, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT));
+	m_ptrEnemies.push_back(new EnemyLee(Point2f{ 1200.f, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT));
 	//m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f + 100.f }, 300.f, 225.f));
 
 	m_ptrPlayerUI = new PlayerUI(70.f);
 
-	m_ptrTestObject = new Objects(Point2f{ 1000.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f);
+	m_ptrObjects.push_back(new Objects(Point2f{ 1000.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f));
+	m_ptrObjects.push_back(new Objects(Point2f{ 700.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f));
 }
 
 void Game::Cleanup( )
@@ -60,8 +62,12 @@ void Game::Cleanup( )
 		Damage = nullptr;
 	}
 
-	delete m_ptrTestObject;
-	m_ptrTestObject = nullptr;
+	for(Objects* Objects: m_ptrObjects)
+	{
+		delete Objects;
+		Objects = nullptr;
+	}
+
 }
 
 void Game::Update(float elapsedSec)
@@ -79,57 +85,115 @@ void Game::Update(float elapsedSec)
 	}
 
 	//Objects Update
-	if (m_ptrTestObject->GetIsPickedUp())
+	for (Objects* Objects : m_ptrObjects)
 	{
-		float xPosition{ 10.f };
 		float yPosition{ m_PLAYER_HEIGHT / 5.f * 3.f };
-		m_ptrTestObject->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - xPosition , m_ptrPlayer->GetPosition().y + yPosition }, m_ptrPlayer->GetIsLeft(), m_TransformSvg);
-
-		if (m_ptrPlayer->GetIsDamaged())
+		const float PLAYER_OBJECTS_Y_DISTANCE{ 30.f };
+		if (Objects->GetIsPickedUp() && Objects->GetPlayer() == m_ptrPlayer)
 		{
-			m_ptrTestObject->DroppedObject(false, m_ptrPlayer->GetPosition().y);
-			m_ptrTestObject->SetIsFlipped(false);
+			float xPosition{ 10.f };
+			Objects->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - xPosition , m_ptrPlayer->GetPosition().y + yPosition }, m_ptrPlayer->GetIsLeft(), m_TransformSvg);
+
+			if (m_ptrPlayer->GetIsDamaged())
+			{
+				Objects->DroppedObject(m_ptrPlayer->GetPosition().y);
+			}
+
+			if (m_ptrPlayer->GetThrowObject()) Objects->ThrownObject(m_ptrPlayer->GetPosition().y);
+
+			if (Objects->GetIsFlipped() != m_ptrPlayer->GetFlipBox()) Objects->SetIsFlipped(m_ptrPlayer->GetFlipBox());
+
+			if (Objects->GetRumble() != m_ptrPlayer->GetObjectRumble()) Objects->SetRumble(m_ptrPlayer->GetObjectRumble());
+
+		}
+		else if(Objects->GetIsPickedUp() == false)
+		{
+			Objects->Update(elapsedSec, m_TransformSvg);
+
+			if (m_ptrPlayer->CheckIfAttackBoxIsOn())
+			{
+				if ((m_ptrPlayer->GetPosition().y >= Objects->GetPosition().y - PLAYER_OBJECTS_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Objects->GetPosition().y + PLAYER_OBJECTS_Y_DISTANCE)
+					&& Objects->CheckIfOverlapping(m_ptrPlayer->GetAttackBox()))
+				{
+					if (m_PlayerHeavyAttacked || (m_PlayerLightAttacked && m_ptrPlayer->GetHasPickedUpAnObject() == true))
+					{
+						Objects->Collision(m_ptrPlayer->GetAttackBox(), m_ptrPlayer->GetIsLeft());
+					}
+					else if (m_PlayerLightAttacked && m_ptrPlayer->GetHasPickedUpAnObject() == false)
+					{
+						Objects->PickUpPlayer(m_ptrPlayer->GetAttackBox(), m_ptrPlayer);
+						m_ptrPlayer->HasPickedUpObject(Objects->GetIsPickedUp(), Objects);
+					}
+				}
+			}
 		}
 
-		if (m_ptrPlayer->GetThrowObject()) m_ptrTestObject->ThrownObject(m_ptrPlayer->GetPosition().y);
-
-		if (m_ptrTestObject->GetIsFlipped() != m_ptrPlayer->GetFlipBox()) m_ptrTestObject->SetIsFlipped(m_ptrPlayer->GetFlipBox());
-
-		if (m_ptrTestObject->GetRumble() != m_ptrPlayer->GetObjectRumble()) m_ptrTestObject->SetRumble(m_ptrPlayer->GetObjectRumble());
-
-	}
-	else
-	{
-		m_ptrTestObject->Update(elapsedSec, m_TransformSvg);
-
-		if (m_ptrPlayer->CheckIfAttackBoxIsOn())
+		if (m_ptrPlayer->GetHealth() > 0 && Objects->GetDoDamage() && (Objects->GetFallYPosition() >= m_ptrPlayer->GetPosition().y - yPosition && Objects->GetFallYPosition() <= m_ptrPlayer->GetPosition().y + yPosition)
+			 && Objects->GetEnemy() != nullptr)
 		{
-			const float PLAYER_OBJECTS_Y_DISTANCE{ 30.f };
-
-			if ((m_ptrPlayer->GetPosition().y >= m_ptrTestObject->GetPosition().y - PLAYER_OBJECTS_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= m_ptrTestObject->GetPosition().y + PLAYER_OBJECTS_Y_DISTANCE))
+			const Point2f DAMAGE_POSITION_PLAYER{ Point2f{ m_ptrPlayer->GetPosition().x + m_PLAYER_WIDTH / 4.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 3.f * 2.f} };
+			m_ptrPlayer->CheckHit(Objects->GetHitbox(), Objects->GetIsLeft(), 6);
+			if (m_ptrPlayer->GetIsDamaged())
 			{
-				if (m_PlayerHeavyAttacked)
+				Objects->ObjectHit(true);
+				m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
+			}
+			else if (m_ptrPlayer->GetIsHitWhileBlocking()) Objects->ObjectHit(true);
+		}
+
+		for (EnemyMike* Enemies : m_ptrEnemies)
+		{
+			if(Objects->GetIsPickedUp() && Objects->GetEnemy() == Enemies)
+			{
+				float xPosition{ 10.f };
+				float yPosition{ m_ENEMY_HEIGHT / 3.f * 2.f };
+				Objects->Update(elapsedSec, Point2f{ Enemies->GetPosition().x - xPosition , Enemies->GetPosition().y + yPosition }, Enemies->GetIsLeft(), m_TransformSvg);
+
+				if (Enemies->GetIsDamaged())
 				{
-					m_ptrTestObject->Collision(m_ptrPlayer->GetAttackBox(), m_ptrPlayer->GetIsLeft());
+					Objects->DroppedObject(Enemies->GetPosition().y);
 				}
-				else if (m_PlayerLightAttacked)
+
+				if (Enemies->GetThrowObject()) Objects->ThrownObject(Enemies->GetPosition().y);
+
+				if (Objects->GetIsFlipped() != Enemies->GetFlipBox()) Objects->SetIsFlipped(Enemies->GetFlipBox());
+
+				if (Objects->GetRumble() != Enemies->GetObjectRumble()) Objects->SetRumble(Enemies->GetObjectRumble());
+			}
+			else if(Objects->GetIsPickedUp() == false)
+			{
+				if (Enemies->CheckIfAttackBoxIsOn())
 				{
-					m_ptrTestObject->PickUp(m_ptrPlayer->GetAttackBox());
-					if (m_ptrTestObject->GetIsPickedUp())
+					const float ENEMY_OBJECTS_Y_DISTANCE{ 30.f };
+
+					if (Enemies->GetIsPickingUp() && (Enemies->GetPosition().y >= Objects->GetPosition().y - ENEMY_OBJECTS_Y_DISTANCE && Enemies->GetPosition().y <= Objects->GetPosition().y + ENEMY_OBJECTS_Y_DISTANCE))
 					{
-						m_ptrPlayer->HasPickedUpObject(true);
+						Objects->PickUpEnemy(Enemies->GetAttackBox(), Enemies);
+						Enemies->HasPickedUpObject(Objects->GetIsPickedUp(), Objects);
 					}
 				}
 			}
 		}
 	}
 
+
 	//Enemies Update
 
 	for (EnemyMike* Enemies : m_ptrEnemies)
 	{
-		Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TransformSvg);
+		bool ObjectFound{ false };
+		for (Objects* Objects : m_ptrObjects)
+		{
+			if(Objects->GetPosition().x + 250.f > Enemies->GetPosition().x && Objects->GetPosition().x - 250.f < Enemies->GetPosition().x && Objects->GetIsPickedUp() == false)
+			{
+				Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TransformSvg, Objects->GetPosition(), Objects->GetIsLeft());
+				ObjectFound = true;
+				break;
+			}
+		}
+		if(ObjectFound == false) Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TransformSvg);
 
+		//Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TransformSvg);
 		const float PLAYER_VS_ENEMY_Y_DISTANCE{ 30.f };
 		const Point2f DAMAGE_POSITION{ Point2f{ Enemies->GetPosition().x + m_ENEMY_WIDTH / 4.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT } };
 
@@ -210,15 +274,26 @@ void Game::Update(float elapsedSec)
 			//std::cout << "Enemy is Hitting" << std::endl;
 			const Point2f DAMAGE_POSITION_PLAYER{ Point2f{ m_ptrPlayer->GetPosition().x + m_PLAYER_WIDTH / 4.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 3.f * 2.f}};
 
-			if (Enemies->m_EnemyStatus == EnemyMike::Status::LightAttack)
+			if(Enemies->GetHasPickedUp())
 			{
-				m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 2);
-				if(m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 2));
+				if(Enemies->m_EnemyStatus == EnemyMike::Status::PickUpAttack)
+				{
+					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 7);
+					if (m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 7));
+				}
 			}
-			else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick)
+			else
 			{
-				m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 6, false, true);
-				if (m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
+				if (Enemies->m_EnemyStatus == EnemyMike::Status::LightAttack)
+				{
+					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 2);
+					if (m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 2));
+				}
+				else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick)
+				{
+					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 6, false, true);
+					if (m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
+				}
 			}
 		}
 
@@ -226,19 +301,23 @@ void Game::Update(float elapsedSec)
 		{
 			if (m_ptrPlayer->GetPosition().x > Enemies->GetPosition().x) Enemies->SetIsLeft(false);
 			else Enemies->SetIsLeft(true);
-			Enemies->m_EnemyStatus = EnemyMike::Status::Idle;
+			if(Enemies->GetHasPickedUp()) Enemies->m_EnemyStatus = EnemyMike::Status::PickUpIdle;
+			else Enemies->m_EnemyStatus = EnemyMike::Status::Idle;
 		}
 
-		if (Enemies->GetHealth() > 0 && m_ptrTestObject->GetDoDamage() && (m_ptrTestObject->GetFallYPosition() >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrTestObject->GetFallYPosition() <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
+		for (Objects* Objects : m_ptrObjects)
 		{
-			Enemies->CheckHit(m_ptrTestObject->GetHitbox(), 6);
-			Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 6);
-			if (Enemies->GetIsDamaged())
+			if (Enemies->GetHealth() > 0 && Objects->GetDoDamage() && (Objects->GetFallYPosition() >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && Objects->GetFallYPosition() <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE)
+				&& Objects->GetEnemy() != Enemies)
 			{
-				m_ptrTestObject->ObjectHit(true);
-				m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 6));
+				Enemies->CheckHit(Objects->GetHitbox(), 6, false, false, false, true);
+				if (Enemies->GetIsDamaged())
+				{
+					Objects->ObjectHit(true);
+					m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 6));
+				}
+				else if (Enemies->GetIsBlocking()) Objects->ObjectHit(true);
 			}
-			else if(Enemies->GetIsBlocking()) m_ptrTestObject->ObjectHit(true);
 		}
 	}
 
@@ -248,10 +327,17 @@ void Game::Update(float elapsedSec)
 
 		if (Enemy->GetSpawnCoins())
 		{
-			m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents5));
-			m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents10));
-			m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
-
+			if( Enemy->GetEnemyType() == "Lee")
+			{
+				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
+				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
+			}
+			else
+			{
+				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents5));
+				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents10));
+				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
+			}
 
 			delete Enemy;
 			m_ptrEnemies.erase(m_ptrEnemies.begin() + EnemyIndex);
@@ -354,6 +440,7 @@ void Game::Draw( ) const
 	m_ptrMap->Draw(dstRectfMap, srcRectMap);
 	utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
 	utils::DrawPolygon(m_TransformSvg);
+	//utils::DrawPolygon(m_MapSvg[1]);
 
 
 	//Coins 
@@ -362,10 +449,14 @@ void Game::Draw( ) const
 		Money->Draw();
 	}
 
-	m_ptrTestObject->Draw();
+	//Objects
+	for (Objects* Objects : m_ptrObjects)
+	{
+		if(Objects->GetIsPickedUp() == false) Objects->Draw();
+	}
 
 	//Draw Player and Enemies depending on Y-axis
-	QuicksortDraw();
+	SortDraw();
 
 	//Draw PlayerUI
 	if (m_DoShowWallet)
@@ -523,35 +614,35 @@ void Game::PlayerKeys(float elapsedSec)
 	 /*Check keyboard state*/
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
-	if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_UP] || pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_W])
+	if (pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_W])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, true, false, true);
 	}
-	else if (pStates[SDL_SCANCODE_RIGHT] && pStates[SDL_SCANCODE_DOWN] || pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_S])
+	else if (pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_S])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, true, false, false, true);
 	}
-	else if (pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_UP] || pStates[SDL_SCANCODE_A] && pStates[SDL_SCANCODE_W])
+	else if (pStates[SDL_SCANCODE_A] && pStates[SDL_SCANCODE_W])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, true, true);
 	}
-	else if (pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_DOWN] || pStates[SDL_SCANCODE_A] && pStates[SDL_SCANCODE_S])
+	else if (pStates[SDL_SCANCODE_A] && pStates[SDL_SCANCODE_S])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, true, false, true);
 	}
-	else if (pStates[SDL_SCANCODE_RIGHT] || pStates[SDL_SCANCODE_D])
+	else if (pStates[SDL_SCANCODE_D])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, true, false);
 	}
-	else if (pStates[SDL_SCANCODE_LEFT] || pStates[SDL_SCANCODE_A])
+	else if (pStates[SDL_SCANCODE_A])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, true);
 	}
-	else if (pStates[SDL_SCANCODE_DOWN] || pStates[SDL_SCANCODE_S])
+	else if (pStates[SDL_SCANCODE_S])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, false, false, true);
 	}
-	else if (pStates[SDL_SCANCODE_UP] || pStates[SDL_SCANCODE_W])
+	else if (pStates[SDL_SCANCODE_W])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, false, true);
 	}
@@ -561,10 +652,13 @@ void Game::PlayerKeys(float elapsedSec)
 	}
 }
 
-void Game::QuicksortDraw() const
+void Game::SortDraw() const
 {
 	int AmountOfEnemiesAbovePlayerYPosition{};
 	std::vector<EnemyMike*> m_ptrEnemiesAbovePlayer{};
+
+	int AmountOfEnemiesBelowPlayerYPosition{};
+	std::vector<EnemyMike*> m_ptrEnemiesBelowPlayer{};
 
 	for (EnemyMike* Enemies : m_ptrEnemies)
 	{
@@ -573,30 +667,6 @@ void Game::QuicksortDraw() const
 			m_ptrEnemiesAbovePlayer.push_back(Enemies);
 			++AmountOfEnemiesAbovePlayerYPosition;
 		}
-	}
-
-	if (AmountOfEnemiesAbovePlayerYPosition == 2)
-	{
-		if (m_ptrEnemiesAbovePlayer[0]->GetPosition().y > m_ptrEnemiesAbovePlayer[1]->GetPosition().y)
-		{
-			m_ptrEnemiesAbovePlayer[0]->Draw();
-			m_ptrEnemiesAbovePlayer[1]->Draw();
-		}
-		else
-		{
-			m_ptrEnemiesAbovePlayer[1]->Draw();
-			m_ptrEnemiesAbovePlayer[0]->Draw();
-		}
-	}
-	else if (AmountOfEnemiesAbovePlayerYPosition == 1) m_ptrEnemiesAbovePlayer[0]->Draw();
-
-	m_ptrPlayer->Draw();
-
-	int AmountOfEnemiesBelowPlayerYPosition{};
-	std::vector<EnemyMike*> m_ptrEnemiesBelowPlayer{};
-
-	for (EnemyMike* Enemies : m_ptrEnemies)
-	{
 		if (Enemies->GetPosition().y < m_ptrPlayer->GetPosition().y)
 		{
 			m_ptrEnemiesBelowPlayer.push_back(Enemies);
@@ -604,21 +674,42 @@ void Game::QuicksortDraw() const
 		}
 	}
 
-	if (AmountOfEnemiesBelowPlayerYPosition == 2)
+	SortYPosition(AmountOfEnemiesAbovePlayerYPosition, m_ptrEnemiesAbovePlayer);
+
+	if(m_ptrPlayer->GetHoldingObject() != nullptr)
 	{
-		if (m_ptrEnemiesBelowPlayer[0]->GetPosition().y > m_ptrEnemiesBelowPlayer[1]->GetPosition().y)
+		m_ptrPlayer->GetHoldingObject()->Draw();
+	}
+	m_ptrPlayer->Draw();
+
+	SortYPosition(AmountOfEnemiesBelowPlayerYPosition, m_ptrEnemiesBelowPlayer);
+}
+
+void Game::SortYPosition(int Amount, const std::vector<EnemyMike*>& ptrEnemies) const
+{
+	if (Amount == 2)
+	{
+		if (ptrEnemies[0]->GetPosition().y > ptrEnemies[1]->GetPosition().y)
 		{
-			m_ptrEnemiesBelowPlayer[0]->Draw();
-			m_ptrEnemiesBelowPlayer[1]->Draw();
+			SortDrawObject(ptrEnemies[0]);
+			SortDrawObject(ptrEnemies[1]);
 		}
 		else
 		{
-			m_ptrEnemiesBelowPlayer[1]->Draw();
-			m_ptrEnemiesBelowPlayer[0]->Draw();
+			SortDrawObject(ptrEnemies[1]);
+			SortDrawObject(ptrEnemies[0]);
 		}
 	}
-	else if (AmountOfEnemiesBelowPlayerYPosition == 1) m_ptrEnemiesBelowPlayer[0]->Draw();
-	
+	else if (Amount == 1) SortDrawObject(ptrEnemies[0]);
+}
+
+void Game::SortDrawObject(const EnemyMike* Enemy) const
+{
+	if(Enemy->GetHoldingObject() != nullptr)
+	{
+		Enemy->GetHoldingObject()->Draw();
+	}
+	Enemy->Draw();
 }
 
 void Game::ShowWallet()

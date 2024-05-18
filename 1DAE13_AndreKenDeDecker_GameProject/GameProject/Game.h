@@ -2,6 +2,7 @@
 #include "BaseGame.h"
 #include "ScottPilgrim.h"
 #include "EnemyMike.h"
+#include "EnemyLee.h"
 #include "Camera.h"
 #include "Coins.h"
 #include "PlayerUI.h"
@@ -38,7 +39,9 @@ private:
 	void Cleanup( );
 	void ClearBackground( ) const;
 	void PlayerKeys(float elapsedSec);
-	void QuicksortDraw() const;
+	void SortDraw() const;
+	void SortYPosition(int Amount, const std::vector<EnemyMike*>& Vectors) const;
+	void SortDrawObject(const EnemyMike* Enemy) const;
 	void ShowWallet();
 
 	//Variables
@@ -60,7 +63,7 @@ private:
 	const float m_PLAYER_HEIGHT{ 280.f };
 	const float m_PLAYER_WIDTH{ 320.f };
 	const float m_ENEMY_HEIGHT{ 230.f };
-	const float m_ENEMY_WIDTH{ 300.f };
+	const float m_ENEMY_WIDTH{ 280.f };
 	const float m_COINS_SIZE{ 80.f };
 	const float m_DAMAGE_SIZE{ 40.f };
 
@@ -68,16 +71,16 @@ private:
 	Texture* m_ptrMap;
 	Camera* m_ptrCamera;
 	PlayerUI* m_ptrPlayerUI;
-	Objects* m_ptrTestObject;
-
-	//EnemyMike* m_ptrTestEnemy;
 
 	std::vector<EnemyMike*> m_ptrEnemies{};
+	std::vector<Objects*> m_ptrObjects{};
 	std::vector<Coins*> m_ptrCoins{};
 	std::vector<DamageNumbers*> m_ptrDamageNumbers{};
 
 	std::vector<std::vector<Point2f>> m_MapSvg;
 	std::vector<Point2f> m_TransformSvg;
+
+	std::vector<std::vector<Point2f>> m_CameraSvg;
 
 	//Timer
 	float m_ShowWalletCounter{};
