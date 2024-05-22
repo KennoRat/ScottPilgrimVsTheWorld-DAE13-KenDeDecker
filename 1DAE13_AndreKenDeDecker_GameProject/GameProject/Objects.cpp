@@ -4,7 +4,7 @@
 Texture* Objects::m_ptrSpriteSheet{ nullptr };
 int Objects::m_InstanceCounter{ 0 };
 
-Objects::Objects(Point2f Position, float Width, float Height): m_Position{Position}, m_Width{Width}, m_Height{Height}
+Objects::Objects(Point2f Position, float Width, float Height, SoundEffects* SoundEffects): m_Position{Position}, m_Width{Width}, m_Height{Height}, m_ptrSoundEffects{SoundEffects}
 {
 	m_IsInTheAir = false;
 	m_IsSliding = false;
@@ -61,7 +61,7 @@ void Objects::Draw() const
 	utils::DrawPolygon(m_HitboxTransformed);
 }
 
-void Objects::Update(float elapsedSec, const Point2f& Position, bool IsLeft, const std::vector<Point2f>& MapSvg)
+void Objects::Update(float elapsedSec, const Point2f& Position, bool IsLeft, const std::vector<std::vector<Point2f>>& MapSvg)
 {
 	// Transform Hitboxes
 	Matrix2x3 TranslationMat{};
@@ -86,7 +86,7 @@ void Objects::Update(float elapsedSec, const Point2f& Position, bool IsLeft, con
 
 }
 
-void Objects::Update(float elapsedSec, const std::vector<Point2f>& MapSvg)
+void Objects::Update(float elapsedSec, const std::vector<std::vector<Point2f>>& MapSvg)
 {
 	Update(elapsedSec, m_Position, m_IsLeft, MapSvg);
 }
@@ -324,40 +324,45 @@ void Objects::UpdateYPosition(float elapsedSec)
 				m_IsSliding = true;
 				m_SlideCounter = 0.f;
 			}
+			m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleDrop);
 		}
 	}
 }
 
-void Objects::CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg)
+void Objects::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>& MapSvg)
 {
 	float yLength{ 5.f };
 
-	if (utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
+	for (int VectorIndex{}; VectorIndex < (MapSvg.size()); ++VectorIndex)
 	{
-		if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
-		else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
-		m_Velocity.x = -m_Velocity.x / 3.f;
-		m_IsLeft = !m_IsLeft;
-	}
-	else if (m_IsInTheAir)
-	{
-		yLength -= m_Position.y - m_FallYPosition;
-
-		if (utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
+		if (utils::Raycast(MapSvg[VectorIndex], Point2f{m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength}, Point2f{m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength}, m_Hitinfo))
 		{
 			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
 			else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
 			m_Velocity.x = -m_Velocity.x / 3.f;
 			m_IsLeft = !m_IsLeft;
 		}
-	}
+		else if (m_IsInTheAir)
+		{
+			yLength -= m_Position.y - m_FallYPosition;
 
-	if ((utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y - 1.f }, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y + yLength }, m_Hitinfo)
-		|| utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y - 1.f }, Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y + yLength }, m_Hitinfo))
-		&& m_IsInTheAir == false)
-	{
-		if (m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 6.f;
-		else m_Position.y = m_Hitinfo.intersectPoint.y;
+			if (utils::Raycast(MapSvg[VectorIndex], Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
+			{
+				if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+				else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+				m_Velocity.x = -m_Velocity.x / 3.f;
+				m_IsLeft = !m_IsLeft;
+			}
+		}
+
+		if ((utils::Raycast(MapSvg[VectorIndex], Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y - 1.f }, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y + yLength }, m_Hitinfo)
+			|| utils::Raycast(MapSvg[VectorIndex], Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y - 1.f }, Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y + yLength }, m_Hitinfo))
+			&& m_IsInTheAir == false)
+		{
+			if (m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 6.f;
+			else m_Position.y = m_Hitinfo.intersectPoint.y;
+		}
+
 	}
 
 }

@@ -2,7 +2,7 @@
 #include "ScottPilgrim.h"
 #include "EnemyMike.h"
 
-ScottPilgrim::ScottPilgrim(Point2f position, float width, float height): m_Position{position}, m_Width{width}, m_Height{height}
+ScottPilgrim::ScottPilgrim(Point2f position, float width, float height, SoundEffects* SoundEffects): m_Position{position}, m_Width{width}, m_Height{height}, m_ptrSoundEffects{SoundEffects}
 {
 	m_IsAlive = true;
 	m_IsAttacking = false;
@@ -77,7 +77,7 @@ ScottPilgrim::~ScottPilgrim()
 	m_ptrSpriteSheet = nullptr;
 }
 
-ScottPilgrim::ScottPilgrim(const ScottPilgrim& other): ScottPilgrim(other.m_Position, other.m_Width, other.m_Height)
+ScottPilgrim::ScottPilgrim(const ScottPilgrim& other): ScottPilgrim(other.m_Position, other.m_Width, other.m_Height, other.m_ptrSoundEffects)
 {
 	m_IsLeft = other.m_IsLeft;
 	m_Health = other.m_Health;
@@ -90,6 +90,7 @@ ScottPilgrim& ScottPilgrim::operator=(const ScottPilgrim& other)
 		m_Position = other.m_Position;
 		m_Width = other.m_Width;
 		m_Height = other.m_Height;
+		m_ptrSoundEffects = other.m_ptrSoundEffects;
 		m_IsLeft = other.m_IsLeft;
 		m_Health = other.m_Health;
 	}
@@ -99,6 +100,7 @@ ScottPilgrim& ScottPilgrim::operator=(const ScottPilgrim& other)
 ScottPilgrim::ScottPilgrim(ScottPilgrim&& other) noexcept 
 	: m_Position{ std::move(other.m_Position) }
 	, m_Width{ std::move(other.m_Width) }
+	, m_ptrSoundEffects{std::move(other.m_ptrSoundEffects)}
 	, m_Height{ std::move(other.m_Height) }
 	, m_Health{ std::move(other.m_Health) }
 {
@@ -112,6 +114,7 @@ ScottPilgrim& ScottPilgrim::operator=(ScottPilgrim&& other) noexcept
 		m_Position = std::move(other.m_Position);
 		m_Width = std::move(other.m_Width);
 		m_Height = std::move(other.m_Height);
+		m_ptrSoundEffects = std::move(other.m_ptrSoundEffects);
 		m_IsLeft = std::move(other.m_IsLeft);
 		m_Health = std::move(other.m_Health);
 		other.m_ptrSpriteSheet = nullptr;
@@ -150,7 +153,7 @@ void ScottPilgrim::Draw() const
 	utils::DrawPolygon(m_AttackBoxTransformed);
 }
 
-void ScottPilgrim::Update(float elapsedSec, const std::vector<Point2f>& MapSvg)
+void ScottPilgrim::Update(float elapsedSec, const std::vector<std::vector<Point2f>>& MapSvg)
 {
 	m_AnimationCounter += elapsedSec;
 
@@ -634,6 +637,8 @@ void ScottPilgrim::UpdatePositionDuringJump(float elapsedSec, bool isAttacking)
 			m_IsAttacking = false;
 			/*std::cout << "Jumping is false." << std::endl;*/
 			m_AnimationCounter = 0.f;
+
+			m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::JumpLand);
 		}
 		else
 		{
@@ -683,6 +688,7 @@ void ScottPilgrim::UpdatePositionDuringFall(float elapsedSec)
 		m_IsOnTheGround = true;
 		m_ScottStatus = Status::OnTheGround;
 		m_AnimationCounter = 0.f;
+		m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HitTheGround);
 	}
 	else
 	{
@@ -706,59 +712,62 @@ void ScottPilgrim::UpdatePositionDuringBlockHit(float elapsedSec)
 	else m_Position.x -= m_Velocity.x * elapsedSec;
 }
 
-void ScottPilgrim::CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg)
+void ScottPilgrim::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>& MapSvg)
 {
 
 	float yLength{ 5.f };
-
-	if (utils::Raycast(MapSvg, Point2f{ m_PlayerHitboxTransformed[1].x - 1.f, m_PlayerHitboxTransformed[1].y + yLength }, Point2f{ m_PlayerHitboxTransformed[0].x + 1.f, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo))
+	for (int VectorIndex{}; VectorIndex < (MapSvg.size()); ++VectorIndex)
 	{
-		if(m_HitFromTheFront)
+		if (m_IsFalling || m_IsJumping || m_IsOnTheGround)
 		{
-			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
-			else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+			yLength -= m_Position.y - m_InitialJumpPosition.y;
 
-			if (m_IsHitWhileBlocking)
+			if (utils::Raycast(MapSvg[VectorIndex], Point2f{ m_PlayerHitboxTransformed[1].x - 1.f, m_PlayerHitboxTransformed[1].y + yLength }, Point2f{ m_PlayerHitboxTransformed[0].x + 1.f, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo))
 			{
-				m_IsHitWhileBlocking = false;
-				m_Velocity = Vector2f{ 300.f, 150.f };
-				m_PushBackDelayCounter = 0.f;
+				if (m_IsFalling)
+				{
+					if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+					else m_Position.x = m_Hitinfo.intersectPoint.x + 3.f;
+				}
+				else
+				{
+					if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+					else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+				}
 			}
 		}
-		else
-		{
-			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
-			else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
-		}
-
-	}
-	else if(m_IsFalling || m_IsJumping)
-	{
-		yLength -= m_Position.y - m_InitialJumpPosition.y;
-
-		if(utils::Raycast(MapSvg, Point2f{ m_PlayerHitboxTransformed[1].x - 1.f, m_PlayerHitboxTransformed[1].y + yLength }, Point2f{ m_PlayerHitboxTransformed[0].x + 1.f, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo))
+		else if (utils::Raycast(MapSvg[VectorIndex], Point2f{ m_PlayerHitboxTransformed[1].x - 1.f, m_PlayerHitboxTransformed[1].y + yLength }, Point2f{ m_PlayerHitboxTransformed[0].x + 1.f, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo))
 		{
 			if (m_HitFromTheFront)
 			{
 				if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
 				else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+
+				if (m_IsHitWhileBlocking)
+				{
+					m_IsHitWhileBlocking = false;
+					m_Velocity = Vector2f{ 300.f, 150.f };
+					m_PushBackDelayCounter = 0.f;
+				}
 			}
 			else
 			{
 				if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
 				else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
 			}
+
 		}
+
+		if ((utils::Raycast(MapSvg[VectorIndex], Point2f{ m_PlayerHitboxTransformed[0].x, m_PlayerHitboxTransformed[0].y - 1.f }, Point2f{ m_PlayerHitboxTransformed[0].x, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo)
+			|| utils::Raycast(MapSvg[VectorIndex], Point2f{ m_PlayerHitboxTransformed[1].x, m_PlayerHitboxTransformed[1].y - 1.f }, Point2f{ m_PlayerHitboxTransformed[1].x, m_PlayerHitboxTransformed[1].y + yLength }, m_Hitinfo))
+			&& m_IsFalling == false && m_IsJumping == false)
+		{
+			if (m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 3.f;
+			else m_Position.y = m_Hitinfo.intersectPoint.y;
+		}
+
 	}
-	
-	if ((utils::Raycast(MapSvg, Point2f{ m_PlayerHitboxTransformed[0].x, m_PlayerHitboxTransformed[0].y - 1.f }, Point2f{ m_PlayerHitboxTransformed[0].x, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo)
-		|| utils::Raycast(MapSvg, Point2f{ m_PlayerHitboxTransformed[1].x, m_PlayerHitboxTransformed[1].y - 1.f }, Point2f{ m_PlayerHitboxTransformed[1].x, m_PlayerHitboxTransformed[1].y + yLength }, m_Hitinfo))
-		&& m_IsFalling == false && m_IsJumping == false)
-	{
-		if(m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 6.f;
-		else m_Position.y = m_Hitinfo.intersectPoint.y;
-	}
-	
+
 }
 
 void ScottPilgrim::CheckKeys(float elapsedSec, bool moveRight, bool moveLeft, bool moveUp, bool moveDown)
@@ -834,7 +843,10 @@ void ScottPilgrim::Attack(bool lightAttack, bool heavyAttack, bool jumpAttack, b
 	}
 	else
 	{
-		if (lightAttack)	m_ScottStatus = Status::LightAttack;
+		if (lightAttack)
+		{
+			m_ScottStatus = Status::LightAttack;
+		}
 		else if (heavyAttack && m_HeavyAttackCounter == 1) m_ScottStatus = Status::SpinKick;
 		else if (heavyAttack) m_ScottStatus = Status::HeavyAttack;
 		else if (uppercut) m_ScottStatus = Status::Uppercut;
@@ -936,6 +948,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsL
 				m_IsHitWhileBlocking = true;
 				if (EnemyIsLeft == m_IsLeft) m_IsLeft = !m_IsLeft;
 				else m_HitFromTheFront = true;
+				m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::Block);
 			}
 			else
 			{
@@ -968,6 +981,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsL
 						if (EnemyIsLeft == m_IsLeft) m_Velocity.x = -m_Velocity.x;
 						else m_HitFromTheFront = true;
 
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttack);
 					}
 					else if (m_Health <= 0)
 					{
@@ -983,6 +997,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsL
 						if (EnemyIsLeft == m_IsLeft) m_Velocity.x = -m_Velocity.x;
 						else m_HitFromTheFront = true;
 
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::Uppercut);
 					}
 					else if (GetThrownInTheAir)
 					{
@@ -998,6 +1013,8 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsL
 
 						if (EnemyIsLeft == m_IsLeft) m_Velocity.x = -m_Velocity.x;
 						else m_HitFromTheFront = true;
+
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttackFollow);
 					}
 					else
 					{
@@ -1005,6 +1022,7 @@ void ScottPilgrim::CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsL
 						m_ScottStatus = Status::Hit;
 						m_IsDamaged = true;
 
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::LightAttackHIt);
 					}
 					ResetFrame();
 

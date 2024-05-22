@@ -3,21 +3,22 @@
 
 Texture* EnemyMike::m_ptrMikeSpriteSheet{ nullptr };
 Texture* EnemyMike::m_ptrLeeSpriteSheet{ nullptr };
+Texture* EnemyMike::m_ptrLukeSpriteSheet{ nullptr };
 int EnemyMike::m_MikeInstanceCounter{ 0 };
 int EnemyMike::m_LeeInstanceCounter{ 0 };
+int EnemyMike::m_LukeInstanceCounter{ 0 };
 
 
-EnemyMike::EnemyMike(Point2f position, float width, float height, const std::string& EnemyType): m_Position{position}, m_Width{width}, m_Height{height}, m_EnemyType{EnemyType}
+EnemyMike::EnemyMike(Point2f position, float width, float height, SoundEffects* SoundEffects, const std::string& EnemyType): m_Position{position}, m_Width{width}, m_Height{height}, m_ptrSoundEffects{SoundEffects}, m_EnemyType{EnemyType}
 {
 	m_IsAlive = true;
 	m_IsAttacking = false;
 	m_IsDamaged = false;
 	m_IsColliding = false;
-	m_IsLeft = false;
+	m_IsLeft = true;
 	m_IsFalling = false;
 	m_IsOnTheGround = false;
 	m_IsGettingUp = false;
-	m_IsMoving = false;
 	m_IsAttackBoxOn = false;
 	m_AttackBoxReset = false;
 	m_IsTaunting = false;
@@ -33,6 +34,8 @@ EnemyMike::EnemyMike(Point2f position, float width, float height, const std::str
 	m_FlipObject = false;
 	m_ThrowObject = false;
 	m_IsGoingToThrow = false;
+	m_IsHit = false;
+	m_DamagedWhileStunned = false;
 
 	m_Health = 20;
 	m_GotLightHitAmount = 0;
@@ -44,19 +47,25 @@ EnemyMike::EnemyMike(Point2f position, float width, float height, const std::str
 	m_MaxAnimation = 0.09f;
 	m_MaxFrame = 7.f;
 
+	//Move Forward When Spawning
+	m_IsMoving = true;
+	m_JustSpawned = true;
+	float RandomForwardPosition{float(rand() % 100 + 250)};
+	m_NewPosition = Point2f{ m_Position.x - RandomForwardPosition, m_Position.y};
+
 	//Class Association
 	m_ptrHoldingObject = nullptr;
 
 	//Time
 	m_ChoicesDelayCounter = 0.f;
-	m_MaxChoiceDelay = 3.f;
+	m_MaxChoiceDelay = float(rand() % 5 + 3);
 	m_StayOnTheGroundCounter = 0.f;
 	m_StunnedCounter = 0.f;
 	m_DeathCounter = 0.f;
 	m_DissolveCounter = 0.f;
 
-	m_ChangedState = Status::Idle;
-	m_EnemyStatus = Status::Idle;
+	m_ChangedState = Status::Walking;
+	m_EnemyStatus = Status::Walking;
 
 
 	// Make Enemy Hitbox
@@ -102,21 +111,35 @@ EnemyMike::EnemyMike(Point2f position, float width, float height, const std::str
 
 		m_ptrSpriteSheet = m_ptrLeeSpriteSheet;
 	}
+	else if(m_EnemyType == "Luke")
+	{
+		++m_LukeInstanceCounter;
+
+		if (m_LukeInstanceCounter == 1)
+		{
+			m_ptrLukeSpriteSheet = new Texture("EnemyLuke_Sprite.png");
+		}
+
+		m_ptrSpriteSheet = m_ptrLukeSpriteSheet;
+	}
 	
 }
 
 EnemyMike::~EnemyMike()
 {
-	if (m_MikeInstanceCounter == 1)
+	if (m_EnemyType == "Mike")
 	{
-		delete m_ptrSpriteSheet;
-		m_ptrSpriteSheet = nullptr;
-	}
+		if (m_MikeInstanceCounter == 1)
+		{
+			delete m_ptrSpriteSheet;
+			m_ptrSpriteSheet = nullptr;
+		}
 
-	--m_MikeInstanceCounter;
+		--m_MikeInstanceCounter;
+	}
 }
 
-EnemyMike::EnemyMike(const EnemyMike& other): EnemyMike{other.m_Position, other.m_Width, other.m_Height}
+EnemyMike::EnemyMike(const EnemyMike& other): EnemyMike{other.m_Position, other.m_Width, other.m_Height, other.m_ptrSoundEffects}
 {
 	m_IsLeft = other.m_IsLeft;
 	m_Health = other.m_Health;
@@ -131,6 +154,7 @@ EnemyMike& EnemyMike::operator=(const EnemyMike& other)
 		m_Height = other.m_Height;
 		m_IsLeft = other.m_IsLeft;
 		m_Health = other.m_Health;
+		m_ptrSoundEffects = other.m_ptrSoundEffects;
 	}
 	return *this;
 }
@@ -138,6 +162,7 @@ EnemyMike& EnemyMike::operator=(const EnemyMike& other)
 EnemyMike::EnemyMike(EnemyMike&& other) noexcept 
 	: m_Position{ std::move(other.m_Position) }
 	, m_Width{ std::move(other.m_Width) }
+	, m_ptrSoundEffects{std::move(other.m_ptrSoundEffects)}
 	, m_Height{ std::move(other.m_Height) }
 	, m_Health{ std::move(other.m_Health)}
 {
@@ -151,6 +176,7 @@ EnemyMike& EnemyMike::operator=(EnemyMike&& other) noexcept
 		m_Position = std::move(other.m_Position);
 		m_Width = std::move(other.m_Width);
 		m_Height = std::move(other.m_Height);
+		m_ptrSoundEffects = std::move(other.m_ptrSoundEffects);
 		m_IsLeft = std::move(other.m_IsLeft);
 		m_Health = std::move(other.m_Health);
 		other.m_ptrSpriteSheet = nullptr;
@@ -181,7 +207,7 @@ void EnemyMike::Draw() const
 	}
 }
 
-void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<Point2f>& MapSvg, const Point2f& ObjectPosition, bool ObjectIsLeft)
+void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<std::vector<Point2f>>& MapSvg, const Point2f& ObjectPosition, bool ObjectIsLeft)
 {
 	m_AnimationCounter += elapsedSec;
 
@@ -220,9 +246,11 @@ void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition, const st
 		if(m_GotLightHitAmount == 3)
 		{
 			m_IsStunned = true;
-			m_IsDamaged = false;
-			m_StunnedCounter += elapsedSec;
-			UpdateStunned();
+			if(m_DamagedWhileStunned)
+			{
+				m_IsDamaged = false;
+				m_DamagedWhileStunned = false;
+			}
 		}
 		else if(m_GotLightHitAmount == 4)
 		{
@@ -269,6 +297,7 @@ void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition, const st
 			m_IsDamaged = false;
 			m_IsOnTheGround = true;
 			m_EnemyStatus = Status::OnTheGround;
+			m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HitTheGround);
 			m_AnimationCounter = 0.f;
 		}
 		else
@@ -437,9 +466,17 @@ void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition, const st
 	}
 	else m_AttackBoxTransformed = TranslationMat.Transform(m_AttackBoxOnOrigin);
 
+	if(m_IsStunned)
+	{
+		m_StunnedCounter += elapsedSec;
+		UpdateStunned();
+	}
+
 	if (m_IsMoving) GoToRandomPosition(elapsedSec);
 
-	CheckIfGoingOutOfBounds(MapSvg);
+	if(m_JustSpawned == false) CheckIfGoingOutOfBounds(MapSvg);
+
+	if (m_IsHit == true) m_IsHit = false;
 }
 
 void EnemyMike::UpdateAnimation()
@@ -458,7 +495,6 @@ void EnemyMike::UpdateAnimation()
 			m_IsGettingUp = false;
 			m_IsAttacking = false;
 			m_IsTaunting = false;
-			m_IsStunned = false;
 			m_FlipObject = false;
 			m_IsAttackBoxOn = false;
 			
@@ -516,8 +552,6 @@ void EnemyMike::UpdateChoicesDelay(const Point2f& PlayerPosition, const Point2f&
 		int RandomChoice{ rand() % 100 };
 
 		if (m_HasPickUpObject) RandomChoice -= 10;
-
-		m_GotLightHitAmount = 0;
 
 		if (RandomChoice >= 70)
 		{
@@ -590,7 +624,7 @@ void EnemyMike::UpdateChoicesDelay(const Point2f& PlayerPosition, const Point2f&
 
 
 		m_ChoicesDelayCounter -= m_MaxChoiceDelay;
-		m_MaxChoiceDelay = float(rand() % 5 + 3);
+		m_MaxChoiceDelay = float(rand() % 5 + 4);
 		//std::cout << "Moving Is True" << std::endl;
 	}
 }
@@ -629,9 +663,10 @@ void EnemyMike::UpdateStunned()
 {
 	if(m_StunnedCounter >= m_MAX_STUNNED_DELAY)
 	{
-		m_FrameNR = 3.f;
+		m_FrameNR = 4.f;
 		m_AnimationCounter = 0.f;
 		m_GotLightHitAmount = 4;
+		m_IsStunned = false;
 		m_StunnedCounter -= m_MAX_STUNNED_DELAY;
 	}
 	else
@@ -722,54 +757,61 @@ void EnemyMike::GoToRandomPosition(float elapsedSec)
 			}
 		}
 		m_IsMoving = false;
+		m_JustSpawned = false;
 		m_IsAggressive = false;
 		m_FrameNR = 0.f;
+		m_GotLightHitAmount = 0;
 	}
 }
 
 void EnemyMike::Block()
 {
 	m_EnemyStatus = Status::Block;
-
+	m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::Block);
 	m_IsBlocking = true;
 	m_IsDamaged = false;
 }
 
-void EnemyMike::CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg)
+void EnemyMike::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>& MapSvg)
 {
 
 	float yLength{ 5.f };
 
-	if (utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
+	for (int VectorIndex{}; VectorIndex < (MapSvg.size()); ++VectorIndex)
 	{
-		if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
-		else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
-		if(m_IsBlocking)
+		if (m_IsFalling)
 		{
-			m_IsBlocking = false;
-			m_IsDamaged = false;
+			yLength -= m_Position.y - m_InitialJumpPosition.y;
+
+			if (utils::Raycast(MapSvg[VectorIndex], Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
+			{
+				if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+				else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+			}
+		}
+		else if (utils::Raycast(MapSvg[VectorIndex], Point2f{m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength}, Point2f{m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength}, m_Hitinfo))
+		{
 			m_IsMoving = false;
-			m_BlockingCounter = 0.f;
-		}
-	}
-	else if (m_IsFalling)
-	{
-		yLength -= m_Position.y - m_InitialJumpPosition.y;
-
-		if (utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
-		{
-			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f - 3.f;
 			else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+			if (m_IsBlocking)
+			{
+				m_IsBlocking = false;
+				m_IsDamaged = false;
+				m_BlockingCounter = 0.f;
+			}
 		}
-	}
 
-	if ((utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y - 1.f }, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y + yLength }, m_Hitinfo)
-		|| utils::Raycast(MapSvg, Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y - 1.f }, Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y + yLength }, m_Hitinfo))
-		&& m_IsFalling == false)
-	{
-		m_IsMoving = false;
-		if (m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 6.f;
-		else m_Position.y = m_Hitinfo.intersectPoint.y;
+
+		if ((utils::Raycast(MapSvg[VectorIndex], Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y - 1.f }, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y + yLength }, m_Hitinfo)
+			|| utils::Raycast(MapSvg[VectorIndex], Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y - 1.f }, Point2f{ m_HitboxTransformed[1].x, m_HitboxTransformed[1].y + yLength }, m_Hitinfo))
+			&& m_IsFalling == false)
+		{
+			m_IsMoving = false;
+			if (m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 6.f;
+			else m_Position.y = m_Hitinfo.intersectPoint.y;
+		}
+
 	}
 
 }
@@ -808,7 +850,7 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, b
 		if (utils::Raycast(Attackbox, Point2f(m_HitboxTransformed[1]), Point2f(m_HitboxTransformed[2]), m_Hitinfo) || (IsAnObject && utils::Raycast(Attackbox, Point2f(m_HitboxTransformed[0]), Point2f(m_HitboxTransformed[3]), m_Hitinfo)))
 		{
 			int ChanceToBlock{ rand() % 100 };
-			if(ChanceToBlock >= 80 && m_GotLightHitAmount < 3 && m_HasPickUpObject == false)
+			if (ChanceToBlock >= 80 && m_GotLightHitAmount < 3 && m_HasPickUpObject == false && JustToCheckCollision == false)
 			{
 				Block();
 			}
@@ -823,6 +865,7 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, b
 					ResetFrame();
 					m_Health -= GetDamage;
 					m_IsMoving = false;
+					m_JustSpawned = false;
 					m_IsAttacking = false;
 					m_IsAggressive = false;
 					m_HasPickUpObject = false;
@@ -841,6 +884,7 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, b
 						m_Position.y += 5.f;
 						m_IsFalling = true;
 						m_GotLightHitAmount = 0;
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttack);
 					}
 					else if (GetUppercut)
 					{
@@ -851,6 +895,7 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, b
 						m_Position.y += 5.f;
 						m_IsFalling = true;
 						m_GotLightHitAmount = 0;
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::Uppercut);
 					}
 					else if (GetThrownInTheAir)
 					{
@@ -863,13 +908,18 @@ void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, b
 						m_Position.y += 5.f;
 						m_IsFalling = true;
 						m_GotLightHitAmount = 0;
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttackFollow);
 					}
 					else
 					{
 						m_EnemyStatus = Status::Hit;
 						++m_GotLightHitAmount;
+						if (m_GotLightHitAmount == 3) m_DamagedWhileStunned = true;;
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::LightAttackHIt);
+						std::cout << "LightAttack Hit" << std::endl;
 					}
 					m_IsDamaged = true;
+					m_IsHit = true;
 					ResetFrame();
 				}
 			}
@@ -887,6 +937,7 @@ void EnemyMike::HasPickedUpObject(bool HasPickUp, Objects* Object)
 		ResetFrame();
 		m_HasPickUpObject = true;
 		m_ptrHoldingObject = Object;
+		m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleHit);
 	}
 }
 
@@ -945,6 +996,11 @@ bool EnemyMike::GetHasPickedUp() const
 bool EnemyMike::GetIsPickingUp() const
 {
 	return m_IsPickingUp;
+}
+
+bool EnemyMike::GetIsHit() const
+{
+	return m_IsHit;
 }
 
 int EnemyMike::GetHealth() const

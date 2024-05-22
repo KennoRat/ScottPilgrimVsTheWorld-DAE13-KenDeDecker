@@ -1,14 +1,15 @@
 #include "pch.h"
 #include "EnemyLee.h"
 
-EnemyLee::EnemyLee(Point2f position, float width, float height, const std::string& EnemyType): EnemyMike(position, width, height, EnemyType)
+EnemyLee::EnemyLee(Point2f position, float width, float height, SoundEffects* SoundEffects, const std::string& EnemyType): EnemyMike(position, width, height, SoundEffects, EnemyType)
 {
 	m_Health = 35;
+	m_MaxChoiceDelay = 2;
 }
 
 EnemyLee::~EnemyLee() noexcept
 {
-	if (EnemyMike::m_LeeInstanceCounter == 1)
+	if (m_LeeInstanceCounter == 1)
 	{
 		delete m_ptrSpriteSheet;
 		m_ptrSpriteSheet = nullptr;
@@ -17,7 +18,7 @@ EnemyLee::~EnemyLee() noexcept
 	--m_LeeInstanceCounter;
 }
 
-void EnemyLee::Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<Point2f>& MapSvg, const Point2f& ObjectPosition, bool ObjectIsLeft)
+void EnemyLee::Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<std::vector<Point2f>>& MapSvg, const Point2f& ObjectPosition, bool ObjectIsLeft)
 {
 	EnemyMike::Update(elapsedSec, PlayerPosition, MapSvg, ObjectPosition, ObjectIsLeft);
 }
@@ -103,7 +104,7 @@ void EnemyLee::UpdateChoicesDelay(const Point2f& PlayerPosition, const Point2f& 
 
 
 		m_ChoicesDelayCounter -= m_MaxChoiceDelay;
-		m_MaxChoiceDelay = float(rand() % 5 + 3);
+		m_MaxChoiceDelay = float(rand() % 3 + 4);
 		//std::cout << "Moving Is True" << std::endl;
 	}
 }

@@ -14,23 +14,40 @@ Game::~Game( )
 
 void Game::Initialize( )
 {
-	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().left, GetViewPort().height / 4.f }, m_PLAYER_WIDTH, m_PLAYER_HEIGHT);
+
+	//Sound
+	m_ptrLevel1Music = new SoundStream("Sounds/AnotherWinter(Mixed).mp3");
+	m_ptrSoundEffects = new SoundEffects();
+
+	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().left, GetViewPort().height / 4.f }, m_PLAYER_WIDTH, m_PLAYER_HEIGHT, m_ptrSoundEffects);
 
 	m_ptrMap = new Texture("Level1_Sprite.png");
 
 	SVGParser::GetVerticesFromSvgFile("Level1_Sprite.svg", m_MapSvg);
 	SVGParser::GetVerticesFromSvgFile("CameraBorder.svg", m_CameraSvg);
 
-	m_ptrCamera = new Camera(GetViewPort().width, GetViewPort().height);
-
-	m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1200.f, GetViewPort().height / 4.f + 200.f}, m_ENEMY_WIDTH, m_ENEMY_HEIGHT));
-	m_ptrEnemies.push_back(new EnemyLee(Point2f{ 1200.f, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT));
-	//m_ptrEnemies.push_back(new EnemyMike(Point2f{ 1000.f, GetViewPort().height / 4.f + 100.f }, 300.f, 225.f));
+	m_ptrCamera = new Camera(GetViewPort().width, GetViewPort().height, m_ptrPlayer->GetPosition());
 
 	m_ptrPlayerUI = new PlayerUI(70.f);
 
-	m_ptrObjects.push_back(new Objects(Point2f{ 1000.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f));
-	m_ptrObjects.push_back(new Objects(Point2f{ 700.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f));
+	m_ptrObjects.push_back(new Objects(Point2f{ 1000.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f, m_ptrSoundEffects));
+	m_ptrObjects.push_back(new Objects(Point2f{ 700.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f, m_ptrSoundEffects));
+
+	//Fight Areas
+	m_FightAreasXPosition.push_back(1050.f);
+	m_FightAreasXPosition.push_back(2860.f);
+	m_FightAreasXPosition.push_back(20000.f);
+
+	//Map Bounds //Transform Map Collisions
+
+	Matrix2x3 TranslationMat{};
+	TranslationMat.SetAsTranslate(Vector2f{ -50.f, -210.f });
+	Matrix2x3 ScaleMat{};
+	ScaleMat.SetAsScale(3.3f, 3.3f);
+	Matrix2x3 TransformMat{ TranslationMat * ScaleMat };
+	m_TransformedMapSvg = TransformMat.Transform(m_MapSvg[0]);
+
+	m_TranformedBordersSvg.push_back(m_TransformedMapSvg);
 }
 
 void Game::Cleanup( )
@@ -43,6 +60,10 @@ void Game::Cleanup( )
 	m_ptrCamera = nullptr;
 	delete m_ptrPlayerUI;
 	m_ptrPlayerUI = nullptr;
+	delete m_ptrLevel1Music;
+	m_ptrLevel1Music = nullptr;
+	delete m_ptrSoundEffects;
+	m_ptrSoundEffects = nullptr;
 	
 	for (EnemyMike* Enemies : m_ptrEnemies)
 	{
@@ -75,7 +96,7 @@ void Game::Update(float elapsedSec)
 	//Player Update
 	PlayerKeys(elapsedSec);
 
-	m_ptrPlayer->Update(elapsedSec, m_TransformSvg);
+	m_ptrPlayer->Update(elapsedSec, m_TranformedBordersSvg);
 
 	if (m_ptrPlayer->CheckIdle())
 	{
@@ -92,7 +113,7 @@ void Game::Update(float elapsedSec)
 		if (Objects->GetIsPickedUp() && Objects->GetPlayer() == m_ptrPlayer)
 		{
 			float xPosition{ 10.f };
-			Objects->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - xPosition , m_ptrPlayer->GetPosition().y + yPosition }, m_ptrPlayer->GetIsLeft(), m_TransformSvg);
+			Objects->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - xPosition , m_ptrPlayer->GetPosition().y + yPosition }, m_ptrPlayer->GetIsLeft(), m_TranformedBordersSvg);
 
 			if (m_ptrPlayer->GetIsDamaged())
 			{
@@ -108,7 +129,7 @@ void Game::Update(float elapsedSec)
 		}
 		else if(Objects->GetIsPickedUp() == false)
 		{
-			Objects->Update(elapsedSec, m_TransformSvg);
+			Objects->Update(elapsedSec, m_TranformedBordersSvg);
 
 			if (m_ptrPlayer->CheckIfAttackBoxIsOn())
 			{
@@ -123,6 +144,8 @@ void Game::Update(float elapsedSec)
 					{
 						Objects->PickUpPlayer(m_ptrPlayer->GetAttackBox(), m_ptrPlayer);
 						m_ptrPlayer->HasPickedUpObject(Objects->GetIsPickedUp(), Objects);
+						m_PlayerLightAttacked = false;
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleHit);
 					}
 				}
 			}
@@ -147,7 +170,7 @@ void Game::Update(float elapsedSec)
 			{
 				float xPosition{ 10.f };
 				float yPosition{ m_ENEMY_HEIGHT / 3.f * 2.f };
-				Objects->Update(elapsedSec, Point2f{ Enemies->GetPosition().x - xPosition , Enemies->GetPosition().y + yPosition }, Enemies->GetIsLeft(), m_TransformSvg);
+				Objects->Update(elapsedSec, Point2f{ Enemies->GetPosition().x - xPosition , Enemies->GetPosition().y + yPosition }, Enemies->GetIsLeft(), m_TranformedBordersSvg);
 
 				if (Enemies->GetIsDamaged())
 				{
@@ -160,7 +183,7 @@ void Game::Update(float elapsedSec)
 
 				if (Objects->GetRumble() != Enemies->GetObjectRumble()) Objects->SetRumble(Enemies->GetObjectRumble());
 			}
-			else if(Objects->GetIsPickedUp() == false)
+			else if(Objects->GetIsPickedUp() == false && Objects->GetPlayer() == nullptr)
 			{
 				if (Enemies->CheckIfAttackBoxIsOn())
 				{
@@ -176,39 +199,50 @@ void Game::Update(float elapsedSec)
 		}
 	}
 
+	//Play No enemies Hit effect
+	if (m_ptrPlayer->CheckIfAttackBoxIsOn() && m_PlayerHasHitAnEnemy == false && m_PlayerLightAttacked && m_PlayNoHitEffect)
+	{
+		m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HitAir);
+		m_PlayNoHitEffect = false;
+	}
+
 
 	//Enemies Update
 
-	for (EnemyMike* Enemies : m_ptrEnemies)
+	for (int EnemyIndex{ 0 }; EnemyIndex < m_ptrEnemies.size(); ++EnemyIndex)
 	{
+		EnemyMike* Enemies = m_ptrEnemies[EnemyIndex];
+
 		bool ObjectFound{ false };
 		for (Objects* Objects : m_ptrObjects)
 		{
 			if(Objects->GetPosition().x + 250.f > Enemies->GetPosition().x && Objects->GetPosition().x - 250.f < Enemies->GetPosition().x && Objects->GetIsPickedUp() == false)
 			{
-				Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TransformSvg, Objects->GetPosition(), Objects->GetIsLeft());
+				Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TranformedBordersSvg, Objects->GetPosition(), Objects->GetIsLeft());
 				ObjectFound = true;
 				break;
 			}
 		}
-		if(ObjectFound == false) Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TransformSvg);
+		if(ObjectFound == false) Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TranformedBordersSvg);
 
-		//Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TransformSvg);
 		const float PLAYER_VS_ENEMY_Y_DISTANCE{ 30.f };
 		const Point2f DAMAGE_POSITION{ Point2f{ Enemies->GetPosition().x + m_ENEMY_WIDTH / 4.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT } };
 
+		//See if player is on the same Y position to hit enemies
 		if (m_ptrPlayer->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
 		{
-			//std::cout << "Scott is Hitting" << std::endl;
 			if (m_PlayerLightAttacked)
 			{
-				//std::cout << "Scott is Hitting" << std::endl;
 				if (m_PlayerUppercutAttack)
 				{
 					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 6, false, false, true);
-					if (Enemies->GetIsDamaged())
+					if (Enemies->GetIsHit())
 					{
-						m_ptrPlayer->LightAttackCounterIncrement(true);
+						if(m_PlayerHasHitAnEnemy == false)
+						{
+							m_ptrPlayer->LightAttackCounterIncrement(true);
+							m_PlayerHasHitAnEnemy = true;
+						}
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 6));
 					}
 				}
@@ -217,12 +251,16 @@ void Game::Update(float elapsedSec)
 					if (m_ptrPlayer->GetHasPickedUpAnObject()) Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 7);
 					else Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 2);
 
-					if (Enemies->GetIsDamaged())
+					if (Enemies->GetIsHit())
 					{
 						if(m_ptrPlayer->GetHasPickedUpAnObject()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 7));
 						else
 						{
-							m_ptrPlayer->LightAttackCounterIncrement(true);
+							if (m_PlayerHasHitAnEnemy == false)
+							{
+								m_ptrPlayer->LightAttackCounterIncrement(true);
+								m_PlayerHasHitAnEnemy = true;
+							}
 							m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 2));
 						}
 					}
@@ -234,24 +272,32 @@ void Game::Update(float elapsedSec)
 				if (m_ptrPlayer->GetHeavyAttackCounter() == 1)
 				{
 					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 5, false, true);
-					if (Enemies->GetIsDamaged())
+					if (Enemies->GetIsHit())
 					{
-						m_ptrPlayer->HeavyAttackCounterIncrement(true);
+						if (m_PlayerHasHitAnEnemy == false)
+						{
+							m_ptrPlayer->HeavyAttackCounterIncrement(true);
+							m_PlayerHasHitAnEnemy = true;
+						}
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 5));
 					}
 				}
 				else
 				{
 					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 4);
-					if (Enemies->GetIsDamaged())
+					if (Enemies->GetIsHit())
 					{
-						m_ptrPlayer->HeavyAttackCounterIncrement(true);
+						if (m_PlayerHasHitAnEnemy == false)
+						{
+							m_ptrPlayer->HeavyAttackCounterIncrement(true);
+							m_PlayerHasHitAnEnemy = true;
+						}
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 4));
 					}
 				}
 			}
 
-			if (Enemies->GetHealth() <= 0 && Enemies->GetIsDamaged() && (m_PlayerLightAttacked || m_PlayerHeavyAttacked))
+			if (Enemies->GetHealth() <= 0 && Enemies->GetIsHit() && (m_PlayerLightAttacked || m_PlayerHeavyAttacked))
 			{
 				Point2f DAMAGE_POSITION_KAPOW;
 				if (Enemies->GetIsLeft()) DAMAGE_POSITION_KAPOW = Point2f{ Enemies->GetPosition().x - m_ENEMY_WIDTH / 5.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT / 2.f };
@@ -263,10 +309,12 @@ void Game::Update(float elapsedSec)
 
 			if (Enemies == m_ptrEnemies.back())
 			{
+				if (m_PlayerHasHitAnEnemy) m_PlayerHasHitAnEnemy = false;
 				m_PlayerLightAttacked = false;
 				m_PlayerUppercutAttack = false;
 				m_PlayerHeavyAttacked = false;
 			}
+
 		}
 
 		if (Enemies->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
@@ -279,7 +327,11 @@ void Game::Update(float elapsedSec)
 				if(Enemies->m_EnemyStatus == EnemyMike::Status::PickUpAttack)
 				{
 					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 7);
-					if (m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 7));
+					if (m_ptrPlayer->GetIsDamaged())
+					{
+						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 7));
+						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleHit);
+					}
 				}
 			}
 			else
@@ -287,12 +339,18 @@ void Game::Update(float elapsedSec)
 				if (Enemies->m_EnemyStatus == EnemyMike::Status::LightAttack)
 				{
 					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 2);
-					if (m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 2));
+					if (m_ptrPlayer->GetIsDamaged())
+					{
+						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 2));
+					}
 				}
 				else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick)
 				{
 					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 6, false, true);
-					if (m_ptrPlayer->GetIsDamaged()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
+					if (m_ptrPlayer->GetIsDamaged())
+					{
+						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
+					}
 				}
 			}
 		}
@@ -311,35 +369,33 @@ void Game::Update(float elapsedSec)
 				&& Objects->GetEnemy() != Enemies)
 			{
 				Enemies->CheckHit(Objects->GetHitbox(), 6, false, false, false, true);
-				if (Enemies->GetIsDamaged())
+				if (Enemies->GetIsHit())
 				{
 					Objects->ObjectHit(true);
 					m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 6));
+					m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleHit);
 				}
 				else if (Enemies->GetIsBlocking()) Objects->ObjectHit(true);
 			}
 		}
-	}
 
-	for (int EnemyIndex{ 0 }; EnemyIndex < m_ptrEnemies.size(); ++EnemyIndex)
-	{
-		EnemyMike* Enemy = m_ptrEnemies[EnemyIndex];
-
-		if (Enemy->GetSpawnCoins())
+		if (Enemies->GetSpawnCoins())
 		{
-			if( Enemy->GetEnemyType() == "Lee")
+			m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::CoinSpawn);
+
+			if(Enemies->GetEnemyType() == "Lee" || Enemies->GetEnemyType() == "Luke")
 			{
-				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
-				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
+				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
+				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
 			}
 			else
 			{
-				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents5));
-				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents10));
-				m_ptrCoins.push_back(new Coins(Enemy->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
+				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents5));
+				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents10));
+				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
 			}
 
-			delete Enemy;
+			delete Enemies;
 			m_ptrEnemies.erase(m_ptrEnemies.begin() + EnemyIndex);
 
 			--EnemyIndex;
@@ -361,6 +417,8 @@ void Game::Update(float elapsedSec)
 
 		if (utils::Raycast(m_ptrPlayer->GetHitbox(), Money->GetHitbox()[0], Money->GetHitbox()[1], m_Hitinfo))
 		{
+			m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::CoinPickUp);
+
 			if (Money->m_CoinType == Coins::Type::Dollar1 || Money->m_CoinType == Coins::Type::Dollars2)
 			{
 				m_AboveDecimalPoint += Money->GetValue();
@@ -415,13 +473,19 @@ void Game::Update(float elapsedSec)
 		}
 	}
 
-	//Transform Map Collisions
-	Matrix2x3 TranslationMat{};
-	TranslationMat.SetAsTranslate(Vector2f{-50.f, -210.f});
-	Matrix2x3 ScaleMat{};
-	ScaleMat.SetAsScale(3.3f, 3.3f);
-	Matrix2x3 TransformMat{ TranslationMat * ScaleMat };
-	m_TransformSvg = TransformMat.Transform(m_MapSvg[0]);
+	//Fight Area
+	FightingAreaEvent();
+
+	//Camera Update
+	m_ptrCamera->Update(elapsedSec);
+
+	//Sound
+	if(m_BackgroundMusicOn == false)
+	{
+		m_ptrLevel1Music->SetVolume(m_BackgroundVolume);
+		//m_ptrLevel1Music->Play(true);
+		m_BackgroundMusicOn = true;
+	}
 }
 
 void Game::Draw( ) const
@@ -434,13 +498,14 @@ void Game::Draw( ) const
 
 
 	//Camera
-	m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, Point2f{ m_ptrPlayer->GetPosition().x + m_ptrPlayer->GetWidth() / 2.f , m_ptrPlayer->GetPosition().y });
+	if(m_StopCamera)  m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, Point2f{ m_StopCameraXPosition , m_ptrPlayer->GetPosition().y });
+	else m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, Point2f{ m_ptrPlayer->GetPosition().x + m_ptrPlayer->GetWidth() / 2.f , m_ptrPlayer->GetPosition().y });
 
 	//Draw Map
 	m_ptrMap->Draw(dstRectfMap, srcRectMap);
 	utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
-	utils::DrawPolygon(m_TransformSvg);
-	//utils::DrawPolygon(m_MapSvg[1]);
+	utils::DrawPolygon(m_TransformedMapSvg);
+	utils::DrawPolygon(m_TransformedCameraSvg);
 
 
 	//Coins 
@@ -487,7 +552,7 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 		{
 			for (EnemyMike* Enemies : m_ptrEnemies)
 			{
-				if ((Enemies->GetHealth() <= 2 || Enemies->GetGotLightHitAmount() == 3 )&& m_ptrPlayer->GetIsJumping() == false && m_PlayerUppercutAttack == false && m_ptrPlayer->GetHasPickedUpAnObject() == false)
+				if ((Enemies->GetHealth() <= 2 || Enemies->GetGotLightHitAmount() == 3 ) && m_ptrPlayer->GetIsJumping() == false && m_PlayerUppercutAttack == false && m_ptrPlayer->GetHasPickedUpAnObject() == false)
 				{
 					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), 0, true);
 					if (Enemies->GetIsColliding())
@@ -500,6 +565,7 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 			if(m_PlayerUppercutAttack == false) m_ptrPlayer->Attack(true);
 			m_PlayerLightAttacked = true;
 			m_PlayerResetLightAttackButton = false;
+			m_PlayNoHitEffect = true;
 		}
 		else if (m_ptrPlayer->GetIsJumping())
 		{
@@ -544,6 +610,11 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 			m_ptrPlayer->SetIsRunningTrigger(true);
 			//std::cout << "Running trigger is true" << std::endl;
 		}
+	}
+
+	if(e.keysym.sym == SDLK_p)
+	{
+		std::cout << "XPosition: " << m_ptrPlayer->GetPosition().x << std::endl;
 	}
 }
 
@@ -687,7 +758,33 @@ void Game::SortDraw() const
 
 void Game::SortYPosition(int Amount, const std::vector<EnemyMike*>& ptrEnemies) const
 {
-	if (Amount == 2)
+	if (Amount == 3)
+	{
+		int AmountOfEnemiesAbove{};
+		std::vector<EnemyMike*> m_ptrEnemiesAbove{};
+		int AmountOfEnemiesBelow{};
+		std::vector<EnemyMike*> m_ptrEnemiesBelow{};
+
+		for(int EnemiesIndex{1}; EnemiesIndex < 3; ++EnemiesIndex)
+		{
+			if (ptrEnemies[EnemiesIndex]->GetPosition().y >= ptrEnemies[0]->GetPosition().y)
+			{
+				m_ptrEnemiesAbove.push_back(ptrEnemies[EnemiesIndex]);
+				++AmountOfEnemiesAbove;
+			}
+			if (ptrEnemies[EnemiesIndex]->GetPosition().y < ptrEnemies[0]->GetPosition().y)
+			{
+				m_ptrEnemiesBelow.push_back(ptrEnemies[EnemiesIndex]);
+				++AmountOfEnemiesBelow;
+			}
+		}
+
+		SortYPosition(AmountOfEnemiesAbove, m_ptrEnemiesAbove);
+		ptrEnemies[0]->Draw();
+		SortYPosition(AmountOfEnemiesBelow, m_ptrEnemiesBelow);
+
+	}
+	else if (Amount == 2)
 	{
 		if (ptrEnemies[0]->GetPosition().y > ptrEnemies[1]->GetPosition().y)
 		{
@@ -718,5 +815,43 @@ void Game::ShowWallet()
 	{
 		m_DoShowWallet = false;
 		m_ShowWalletCounter -= m_MAX_SHOW_WALLET_DELAY;
+	}
+}
+
+void Game::FightingAreaEvent()
+{
+	if(m_ptrPlayer->GetPosition().x >= m_FightAreasXPosition[0] && m_StopCamera == false)
+	{
+		m_StopCamera = true;
+		float EnemiesSpawnPosition = m_FightAreasXPosition[0] + GetViewPort().width / 3.f * 2.f;
+		if(m_FightEvents == 0)
+		{
+			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+			m_ptrEnemies.push_back(new EnemyLee(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 200.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+		}
+		else if(m_FightEvents == 1)
+		{
+			m_ptrEnemies.push_back(new EnemyLuke(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+			m_ptrEnemies.push_back(new EnemyLee(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 200.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+		}
+		++m_FightEvents;
+
+		m_StopCameraXPosition = m_FightAreasXPosition[0] + m_ptrPlayer->GetWidth() / 2.f;
+		m_FightAreasXPosition.erase(m_FightAreasXPosition.begin());
+
+		//Transform Camera Collisions
+		Matrix2x3 TranslationMat{};
+		TranslationMat.SetAsTranslate(Vector2f{ m_StopCameraXPosition - GetViewPort().width / 2.f, 640.f });
+		m_TransformedCameraSvg = TranslationMat.Transform(m_CameraSvg[0]);
+
+		m_TranformedBordersSvg.push_back(m_TransformedCameraSvg);
+	}
+
+	if(m_StopCamera && m_ptrEnemies.empty())
+	{
+		m_StopCamera = false;
+		m_TranformedBordersSvg.pop_back();
 	}
 }

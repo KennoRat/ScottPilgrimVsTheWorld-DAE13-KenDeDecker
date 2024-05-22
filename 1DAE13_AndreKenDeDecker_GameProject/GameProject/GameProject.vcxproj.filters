@@ -19,10 +19,10 @@
     <Filter Include="Source Files\MyClasses\Effects">
       <UniqueIdentifier>{5ace934e-ab31-4fc2-bdbf-8c6e1dc54ceb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\MyClasses\Objects">
+    <Filter Include="Source Files\MyClasses\World">
       <UniqueIdentifier>{7c82b99f-cb2a-4f8a-8d70-608ab34adc65}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\MyClasses\Objects\Enemies">
+    <Filter Include="Source Files\MyClasses\World\Enemies">
       <UniqueIdentifier>{5bef4393-b004-4e4f-a5f7-c0107cb0ac90}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -46,19 +46,25 @@
       <Filter>Source Files\MyClasses\Effects</Filter>
     </ClCompile>
     <ClCompile Include="Coins.cpp">
-      <Filter>Source Files\MyClasses\Objects</Filter>
+      <Filter>Source Files\MyClasses\World</Filter>
     </ClCompile>
     <ClCompile Include="Objects.cpp">
-      <Filter>Source Files\MyClasses\Objects</Filter>
+      <Filter>Source Files\MyClasses\World</Filter>
     </ClCompile>
     <ClCompile Include="ScottPilgrim.cpp">
-      <Filter>Source Files\MyClasses\Objects</Filter>
+      <Filter>Source Files\MyClasses\World</Filter>
     </ClCompile>
     <ClCompile Include="EnemyMike.cpp">
-      <Filter>Source Files\MyClasses\Objects\Enemies</Filter>
+      <Filter>Source Files\MyClasses\World\Enemies</Filter>
     </ClCompile>
     <ClCompile Include="EnemyLee.cpp">
-      <Filter>Source Files\MyClasses\Objects\Enemies</Filter>
+      <Filter>Source Files\MyClasses\World\Enemies</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyLuke.cpp">
+      <Filter>Source Files\MyClasses\World\Enemies</Filter>
+    </ClCompile>
+    <ClCompile Include="SoundEffects.cpp">
+      <Filter>Source Files\MyClasses\Effects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -78,19 +84,25 @@
       <Filter>Source Files\MyClasses\Effects</Filter>
     </ClInclude>
     <ClInclude Include="Coins.h">
-      <Filter>Source Files\MyClasses\Objects</Filter>
+      <Filter>Source Files\MyClasses\World</Filter>
     </ClInclude>
     <ClInclude Include="Objects.h">
-      <Filter>Source Files\MyClasses\Objects</Filter>
+      <Filter>Source Files\MyClasses\World</Filter>
     </ClInclude>
     <ClInclude Include="ScottPilgrim.h">
-      <Filter>Source Files\MyClasses\Objects</Filter>
+      <Filter>Source Files\MyClasses\World</Filter>
     </ClInclude>
     <ClInclude Include="EnemyMike.h">
-      <Filter>Source Files\MyClasses\Objects\Enemies</Filter>
+      <Filter>Source Files\MyClasses\World\Enemies</Filter>
     </ClInclude>
     <ClInclude Include="EnemyLee.h">
-      <Filter>Source Files\MyClasses\Objects\Enemies</Filter>
+      <Filter>Source Files\MyClasses\World\Enemies</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyLuke.h">
+      <Filter>Source Files\MyClasses\World\Enemies</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundEffects.h">
+      <Filter>Source Files\MyClasses\Effects</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

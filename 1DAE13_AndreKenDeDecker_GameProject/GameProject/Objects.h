@@ -4,18 +4,19 @@
 #include <vector>
 #include "utils.h"
 #include "Matrix2x3.h"
+#include "SoundEffects.h"
 class ScottPilgrim;
 class EnemyMike;
 
 class Objects
 {
 public:
-	Objects(Point2f Position, float Width, float Height);
+	Objects(Point2f Position, float Width, float Height, SoundEffects* SoundEffects);
 	~Objects();
 
 	void Draw() const;
-	void Update(float elapsedSec, const Point2f& Position, bool IsLeft, const std::vector<Point2f>& MapSvg);
-	void Update(float elapsedSec, const std::vector<Point2f>& MapSvg);
+	void Update(float elapsedSec, const Point2f& Position, bool IsLeft, const std::vector<std::vector<Point2f>>& MapSvg);
+	void Update(float elapsedSec, const std::vector<std::vector<Point2f>>& MapSvg);
 	void Collision(const std::vector<Point2f>& Hitbox, bool IsLeft);
 	void PickUpPlayer(const std::vector<Point2f>& Hitbox, ScottPilgrim* Player);
 	void PickUpEnemy(const std::vector<Point2f>& Hitbox, EnemyMike* Enemy);
@@ -69,11 +70,14 @@ private:
 	float m_SlideCounter;
 	const float m_MAX_SLIDE_DELAY{1.5f};
 
+	//Sound 
+	SoundEffects* m_ptrSoundEffects;
+
 	//Functions
 	void TranslateSprite() const;
 	void ResetSprite() const;
 	void UpdateXPosition(float elapsedSec);
 	void UpdateYPosition(float elapsedSec);
-	void CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg);
+	void CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>& MapSvg);
 };
 

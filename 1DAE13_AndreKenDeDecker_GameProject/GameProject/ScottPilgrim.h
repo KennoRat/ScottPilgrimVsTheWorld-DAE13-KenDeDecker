@@ -5,13 +5,14 @@
 #include "utils.h"
 #include "Matrix2x3.h"
 #include <iostream>
+#include "SoundEffects.h"
 
 class Objects;
 
 class ScottPilgrim final
 {
 public:
-	ScottPilgrim(Point2f position, float width, float height);
+	ScottPilgrim(Point2f position, float width, float height, SoundEffects* SoundEffects);
 	~ScottPilgrim() noexcept;
 
 	ScottPilgrim(const ScottPilgrim& other);
@@ -20,7 +21,7 @@ public:
 	ScottPilgrim& operator=(ScottPilgrim&& other) noexcept;
 
 	void Draw() const;
-	void Update(float elapsedSec, const std::vector<Point2f>& MapSvg);
+	void Update(float elapsedSec, const std::vector<std::vector<Point2f>>& MapSvg);
 	/*void CheckKeys(float elapsedSec, bool KeyPressed = false);*/
 	void CheckKeys(float elapsedSec, bool moveRight, bool moveLeft = false ,bool moveUp = false, bool moveDown = false);
 	void Attack(bool lightAttack, bool heavyAttack = false, bool jumpAttack = false, bool uppercut = false);
@@ -131,6 +132,9 @@ private:
 	std::vector<Point2f> m_PlayerHitboxTransformed;
 	std::vector<Point2f> m_AttackBoxTransformed;
 
+	//Sound 
+	SoundEffects* m_ptrSoundEffects;
+
 	// Functions
 	void TranslateSprite() const;
 	void ResetSprite() const;
@@ -143,6 +147,6 @@ private:
 	void UpdatePositionDuringJump(float elapsedSec, bool isAttacking = false);
 	void UpdatePositionDuringFall(float elapsedSec);
 	void UpdatePositionDuringBlockHit(float elapsedSec);
-	void CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg);
+	void CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>& MapSvg);
 };
 

@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "Matrix2x3.h"
 #include <iostream>
+#include "SoundEffects.h"
 
 class Objects;
 
@@ -12,7 +13,7 @@ class EnemyMike
 {
 public:
 
-	EnemyMike(Point2f position, float width, float height, const std::string& EnemyType = "Mike");
+	EnemyMike(Point2f position, float width, float height, SoundEffects* SoundEffects,const std::string& EnemyType = "Mike");
 	virtual ~EnemyMike() noexcept;
 
 	EnemyMike(const EnemyMike& other);
@@ -22,7 +23,7 @@ public:
 
 
 	void Draw() const;
-	virtual void Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<Point2f>& MapSvg, const Point2f& ObjectPosition = Point2f {0.f, 0.f}, bool ObjectIsLeft = false);
+	virtual void Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<std::vector<Point2f>>& MapSvg, const Point2f& ObjectPosition = Point2f {0.f, 0.f}, bool ObjectIsLeft = false);
 	void CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, bool JustToCheckCollision = false, bool GetThrownInTheAir = false, bool GetUppercut = false, bool IsAnObject = false);
 	void HasPickedUpObject(bool HasPickUp, Objects* Object);
 
@@ -38,6 +39,7 @@ public:
 	bool GetSpawnCoins() const;
 	bool GetHasPickedUp() const;
 	bool GetIsPickingUp() const;
+	bool GetIsHit() const;
 	int GetHealth() const;
 	int GetGotLightHitAmount() const;
 	int GetObjectRumble() const;
@@ -84,6 +86,9 @@ protected:
 	bool m_FlipObject;
 	bool m_ThrowObject;
 	bool m_IsGoingToThrow;
+	bool m_JustSpawned;
+	bool m_IsHit;
+	bool m_DamagedWhileStunned;
 	int m_Health;
 	int m_GotLightHitAmount;
 	int m_ObjectRumble;
@@ -107,7 +112,7 @@ protected:
 	float m_BlockingCounter;
 	const float m_MAX_BLOCKING_DELAY{0.25f};
 	float m_StunnedCounter;
-	const float m_MAX_STUNNED_DELAY{0.8f};
+	const float m_MAX_STUNNED_DELAY{1.2f};
 	float m_DeathCounter;
 	const float m_MAX_DEATH_DELAY{ 2.4f };
 	float m_DissolveCounter;
@@ -124,6 +129,9 @@ protected:
 	utils::HitInfo m_Hitinfo;
 	Status m_ChangedState;
 
+	//Sound 
+	SoundEffects* m_ptrSoundEffects;
+
 	//Functions
 	void TranslateSprite() const;
 	void ResetSprite() const;
@@ -137,11 +145,13 @@ protected:
 	void UpdateDeath();
 	void GoToRandomPosition(float elapsedSec);
 	void Block();
-	void CheckIfGoingOutOfBounds(const std::vector<Point2f>& MapSvg);
+	void CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>& MapSvg);
 
 	static Texture* m_ptrMikeSpriteSheet;
 	static int m_MikeInstanceCounter;
 	static Texture* m_ptrLeeSpriteSheet;
 	static int m_LeeInstanceCounter;
+	static Texture* m_ptrLukeSpriteSheet;
+	static int m_LukeInstanceCounter;
 };
 

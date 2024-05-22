@@ -151,6 +151,7 @@ xcopy "$(SolutionDir)Resources\*.*" "$(TargetDir)" /y /d /s</Command>
     <ClCompile Include="Coins.cpp" />
     <ClCompile Include="DamageNumbers.cpp" />
     <ClCompile Include="EnemyLee.cpp" />
+    <ClCompile Include="EnemyLuke.cpp" />
     <ClCompile Include="EnemyMike.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="main.cpp" />
@@ -158,18 +159,21 @@ xcopy "$(SolutionDir)Resources\*.*" "$(TargetDir)" /y /d /s</Command>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="ScottPilgrim.cpp" />
     <ClCompile Include="PlayerUI.cpp" />
+    <ClCompile Include="SoundEffects.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Coins.h" />
     <ClInclude Include="DamageNumbers.h" />
     <ClInclude Include="EnemyLee.h" />
+    <ClInclude Include="EnemyLuke.h" />
     <ClInclude Include="EnemyMike.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Objects.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ScottPilgrim.h" />
     <ClInclude Include="PlayerUI.h" />
+    <ClInclude Include="SoundEffects.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,6 +3,7 @@
 #include "ScottPilgrim.h"
 #include "EnemyMike.h"
 #include "EnemyLee.h"
+#include "EnemyLuke.h"
 #include "Camera.h"
 #include "Coins.h"
 #include "PlayerUI.h"
@@ -10,6 +11,8 @@
 #include "Objects.h"
 #include <SVGParser.h>
 #include "DamageNumbers.h"
+#include "SoundStream.h"
+#include "SoundEffects.h"
 
 class Game : public BaseGame
 {
@@ -43,6 +46,7 @@ private:
 	void SortYPosition(int Amount, const std::vector<EnemyMike*>& Vectors) const;
 	void SortDrawObject(const EnemyMike* Enemy) const;
 	void ShowWallet();
+	void FightingAreaEvent();
 
 	//Variables
 	bool m_PlayerLightAttacked{false};
@@ -52,13 +56,20 @@ private:
 	bool m_PlayerHeavyAttacked{ false };
 	bool m_PlayerResetHeavyAttackButton{ false };
 
+	bool m_PlayerHasHitAnEnemy{ false };
+	bool m_PlayNoHitEffect{ false };
+
 	bool m_PlayerResetRunLeft{true};
 	bool m_PlayerResetRunRight{ true };
 
 	bool m_DoShowWallet{ false };
 
+	bool m_BackgroundMusicOn{ false };
+
 	int m_AboveDecimalPoint{};
 	int m_BelowDecimalPoint{};
+	int m_FightEvents{ 0 };
+	int m_BackgroundVolume{ 15 };
 
 	const float m_PLAYER_HEIGHT{ 280.f };
 	const float m_PLAYER_WIDTH{ 320.f };
@@ -67,6 +78,14 @@ private:
 	const float m_COINS_SIZE{ 80.f };
 	const float m_DAMAGE_SIZE{ 40.f };
 
+	bool m_StopCamera{ false };
+	float m_StopCameraXPosition{};
+
+	//Timer
+	float m_ShowWalletCounter{};
+	const float m_MAX_SHOW_WALLET_DELAY{ 1.5f };
+
+	//Classes
 	ScottPilgrim* m_ptrPlayer;
 	Texture* m_ptrMap;
 	Camera* m_ptrCamera;
@@ -78,12 +97,18 @@ private:
 	std::vector<DamageNumbers*> m_ptrDamageNumbers{};
 
 	std::vector<std::vector<Point2f>> m_MapSvg;
-	std::vector<Point2f> m_TransformSvg;
+	std::vector<Point2f> m_TransformedMapSvg;
 
 	std::vector<std::vector<Point2f>> m_CameraSvg;
+	std::vector<Point2f> m_TransformedCameraSvg;
 
-	//Timer
-	float m_ShowWalletCounter{};
-	const float m_MAX_SHOW_WALLET_DELAY{ 1.5f };
+	std::vector<std::vector<Point2f>> m_TranformedBordersSvg;
+
+	std::vector<float> m_FightAreasXPosition;
+
+	//Sound
+	SoundStream* m_ptrLevel1Music;
+	SoundEffects* m_ptrSoundEffects;
+
 
 };
