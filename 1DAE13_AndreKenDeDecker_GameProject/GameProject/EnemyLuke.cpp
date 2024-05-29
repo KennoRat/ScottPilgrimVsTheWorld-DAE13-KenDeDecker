@@ -5,6 +5,7 @@ EnemyLuke::EnemyLuke(Point2f position, float width, float height, SoundEffects* 
 {
 	m_Health = 40;
 	m_MaxChoiceDelay = 1;
+	m_BlockChancePercent = 25;
 }
 
 EnemyLuke::~EnemyLuke() noexcept

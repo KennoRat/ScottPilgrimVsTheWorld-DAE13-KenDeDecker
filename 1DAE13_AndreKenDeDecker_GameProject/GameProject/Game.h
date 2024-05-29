@@ -4,6 +4,7 @@
 #include "EnemyMike.h"
 #include "EnemyLee.h"
 #include "EnemyLuke.h"
+#include "EnemyRichard.h"
 #include "Camera.h"
 #include "Coins.h"
 #include "PlayerUI.h"
@@ -13,6 +14,8 @@
 #include "DamageNumbers.h"
 #include "SoundStream.h"
 #include "SoundEffects.h"
+#include "HitEffects.h"
+#include "SnowEffect.h"
 
 class Game : public BaseGame
 {
@@ -77,6 +80,7 @@ private:
 	const float m_ENEMY_WIDTH{ 280.f };
 	const float m_COINS_SIZE{ 80.f };
 	const float m_DAMAGE_SIZE{ 40.f };
+	const float m_HITEFFECT_SIZE{ 170.f };
 
 	bool m_StopCamera{ false };
 	float m_StopCameraXPosition{};
@@ -90,11 +94,13 @@ private:
 	Texture* m_ptrMap;
 	Camera* m_ptrCamera;
 	PlayerUI* m_ptrPlayerUI;
+	SnowEffect* m_ptrSnowEffect;
 
 	std::vector<EnemyMike*> m_ptrEnemies{};
 	std::vector<Objects*> m_ptrObjects{};
 	std::vector<Coins*> m_ptrCoins{};
 	std::vector<DamageNumbers*> m_ptrDamageNumbers{};
+	std::vector<HitEffects*> m_ptrHitEffects{};
 
 	std::vector<std::vector<Point2f>> m_MapSvg;
 	std::vector<Point2f> m_TransformedMapSvg;

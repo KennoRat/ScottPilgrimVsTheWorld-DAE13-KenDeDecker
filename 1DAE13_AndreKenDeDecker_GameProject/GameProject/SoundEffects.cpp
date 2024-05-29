@@ -15,6 +15,8 @@ SoundEffects::SoundEffects()
 	m_ptrSoundEffects.push_back(new SoundEffect("Sounds/RecycleBoxDrop.wav"));
 	m_ptrSoundEffects.push_back(new SoundEffect("Sounds/RecycleBoxHit.wav"));
 	m_ptrSoundEffects.push_back(new SoundEffect("Sounds/Uppercut.wav"));
+	m_ptrSoundEffects.push_back(new SoundEffect("Sounds/HeavyAttackAir.wav"));
+	m_ptrSoundEffects.push_back(new SoundEffect("Sounds/GoSound.wav"));
 
 	for (SoundEffect* Effects : m_ptrSoundEffects)
 	{

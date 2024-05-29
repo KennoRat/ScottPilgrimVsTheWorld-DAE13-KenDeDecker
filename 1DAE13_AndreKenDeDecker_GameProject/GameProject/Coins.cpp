@@ -20,7 +20,7 @@ Coins::Coins(Point2f position, float size, Type coin): m_Position{position}, m_S
 	m_Bounce = 0;
 
 	m_NewYPosition = m_Position.y - float(rand() % 200 - 100);
-	m_Velocity = Vector2f{ float(rand() % 100 + 50), float(rand() % 100 + 150)};
+	m_Velocity = Vector2f{ float(rand() % 200 - 100), float(rand() % 100 + 150)};
 
 	float HitboxSize{ m_Size / 2.f };
 	m_HitboxOrigin.push_back(Point2f{0.f, 0.f});
@@ -38,42 +38,6 @@ Coins::~Coins()
 	}
 
 	--m_InstanceCounter;
-}
-
-Coins::Coins(const Coins& other): Coins(other.m_Position, other.m_Size, other.m_CoinType)
-{
-
-}
-
-Coins& Coins::operator=(const Coins& other)
-{
-	if (this != &other)
-	{
-		m_Position = other.m_Position;
-		m_Size = other.m_Size;
-		m_CoinType = other.m_CoinType;
-	}
-	return *this;
-}
-
-Coins::Coins(Coins&& other) noexcept
-	:m_Position{std::move(other.m_Position)}
-	,m_Size{std::move(other.m_Size)}
-	,m_CoinType{std::move(other.m_CoinType)}
-{
-	other.m_ptrSpriteSheet = nullptr;
-}
-
-Coins& Coins::operator=(Coins&& other) noexcept
-{
-	if (this != &other)
-	{
-		m_Position = std::move(other.m_Position);
-		m_Size = std::move(other.m_Size);
-		m_CoinType = std::move(other.m_CoinType);
-		other.m_ptrSpriteSheet = nullptr;
-	}
-	return *this;
 }
 
 void Coins::Draw() const

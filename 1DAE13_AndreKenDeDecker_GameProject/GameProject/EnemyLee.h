@@ -1,11 +1,11 @@
 #pragma once
 #include "EnemyMike.h"
 
-class EnemyLee : public EnemyMike
+class EnemyLee final: public EnemyMike
 {
 public:
-	EnemyLee(Point2f position, float width, float height, SoundEffects* SoundEffects, const std::string& EnemyType = "Lee");
-	~EnemyLee() noexcept;
+	explicit EnemyLee(Point2f position, float width, float height, SoundEffects* SoundEffects, const std::string& EnemyType = "Lee");
+	virtual ~EnemyLee() noexcept override;
 
 	virtual void Update(float elapsedSec, const Point2f& PlayerPosition, const std::vector<std::vector<Point2f>>& MapSvg, const Point2f& ObjectPosition = Point2f{ 0.f, 0.f }, bool ObjectIsLeft = false) override;
 private:

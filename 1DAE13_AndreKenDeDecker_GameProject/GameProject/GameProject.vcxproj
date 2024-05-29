@@ -153,12 +153,15 @@ xcopy "$(SolutionDir)Resources\*.*" "$(TargetDir)" /y /d /s</Command>
     <ClCompile Include="EnemyLee.cpp" />
     <ClCompile Include="EnemyLuke.cpp" />
     <ClCompile Include="EnemyMike.cpp" />
+    <ClCompile Include="EnemyRichard.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="HitEffects.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Objects.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="ScottPilgrim.cpp" />
     <ClCompile Include="PlayerUI.cpp" />
+    <ClCompile Include="SnowEffect.cpp" />
     <ClCompile Include="SoundEffects.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -168,11 +171,14 @@ xcopy "$(SolutionDir)Resources\*.*" "$(TargetDir)" /y /d /s</Command>
     <ClInclude Include="EnemyLee.h" />
     <ClInclude Include="EnemyLuke.h" />
     <ClInclude Include="EnemyMike.h" />
+    <ClInclude Include="EnemyRichard.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="HitEffects.h" />
     <ClInclude Include="Objects.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ScottPilgrim.h" />
     <ClInclude Include="PlayerUI.h" />
+    <ClInclude Include="SnowEffect.h" />
     <ClInclude Include="SoundEffects.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

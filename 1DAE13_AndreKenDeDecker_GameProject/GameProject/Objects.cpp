@@ -77,13 +77,9 @@ void Objects::Update(float elapsedSec, const Point2f& Position, bool IsLeft, con
 	UpdateYPosition(elapsedSec);
 
 	if(m_IsPickedUp) m_Position = Position;
+	else CheckIfGoingOutOfBounds(MapSvg);
 	
-	m_IsLeft = IsLeft;
-
-	CheckIfGoingOutOfBounds(MapSvg);
-
-
-
+	if(m_IsInTheAir == false) m_IsLeft = IsLeft;
 }
 
 void Objects::Update(float elapsedSec, const std::vector<std::vector<Point2f>>& MapSvg)
@@ -130,9 +126,8 @@ void Objects::PickUpEnemy(const std::vector<Point2f>& Hitbox, EnemyMike* Enemy)
 
 void Objects::DroppedObject(float YPosition)
 {
-	std::cout << "Object Dropped" << std::endl;
+	//std::cout << "Object Dropped" << std::endl;
 	m_IsPickedUp = false;
-	m_IsFlipped = false;
 	m_FallYPosition = YPosition;
 	m_IsInTheAir = true;
 }
@@ -314,6 +309,7 @@ void Objects::UpdateYPosition(float elapsedSec)
 			m_Velocity.y = 0.f;
 			m_IsPickedUp = false;
 			m_IsInTheAir = false;
+			m_IsFlipped = false;
 			m_DoDamage = false;
 			m_ptrPlayer = nullptr;
 			m_ptrEnemy = nullptr;
@@ -335,24 +331,24 @@ void Objects::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>& M
 
 	for (int VectorIndex{}; VectorIndex < (MapSvg.size()); ++VectorIndex)
 	{
-		if (utils::Raycast(MapSvg[VectorIndex], Point2f{m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength}, Point2f{m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength}, m_Hitinfo))
-		{
-			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
-			else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
-			m_Velocity.x = -m_Velocity.x / 3.f;
-			m_IsLeft = !m_IsLeft;
-		}
-		else if (m_IsInTheAir)
+		if (m_IsInTheAir)
 		{
 			yLength -= m_Position.y - m_FallYPosition;
 
 			if (utils::Raycast(MapSvg[VectorIndex], Point2f{ m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength }, Point2f{ m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength }, m_Hitinfo))
 			{
 				if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
-				else m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+				else m_Position.x = m_Hitinfo.intersectPoint.x - (m_Width + 20.f);
 				m_Velocity.x = -m_Velocity.x / 3.f;
 				m_IsLeft = !m_IsLeft;
 			}
+		}
+		else if (utils::Raycast(MapSvg[VectorIndex], Point2f{m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength}, Point2f{m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength}, m_Hitinfo))
+		{
+			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
+			else m_Position.x = m_Hitinfo.intersectPoint.x - (m_Width + 20.f);
+			m_Velocity.x = -m_Velocity.x / 3.f;
+			m_IsLeft = !m_IsLeft;
 		}
 
 		if ((utils::Raycast(MapSvg[VectorIndex], Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y - 1.f }, Point2f{ m_HitboxTransformed[0].x, m_HitboxTransformed[0].y + yLength }, m_Hitinfo)

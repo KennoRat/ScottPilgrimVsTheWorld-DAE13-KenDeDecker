@@ -12,13 +12,13 @@ class Objects;
 class ScottPilgrim final
 {
 public:
-	ScottPilgrim(Point2f position, float width, float height, SoundEffects* SoundEffects);
+	explicit ScottPilgrim(Point2f position, float width, float height, SoundEffects* SoundEffects);
 	~ScottPilgrim() noexcept;
 
-	ScottPilgrim(const ScottPilgrim& other);
-	ScottPilgrim& operator=(const ScottPilgrim& other);
-	ScottPilgrim(ScottPilgrim&& other) noexcept;
-	ScottPilgrim& operator=(ScottPilgrim&& other) noexcept;
+	ScottPilgrim(const ScottPilgrim& other) = delete;
+	ScottPilgrim& operator=(const ScottPilgrim& other) = delete;
+	ScottPilgrim(ScottPilgrim&& other) = delete;
+	ScottPilgrim& operator=(ScottPilgrim&& other) = delete;
 
 	void Draw() const;
 	void Update(float elapsedSec, const std::vector<std::vector<Point2f>>& MapSvg);

@@ -77,51 +77,6 @@ ScottPilgrim::~ScottPilgrim()
 	m_ptrSpriteSheet = nullptr;
 }
 
-ScottPilgrim::ScottPilgrim(const ScottPilgrim& other): ScottPilgrim(other.m_Position, other.m_Width, other.m_Height, other.m_ptrSoundEffects)
-{
-	m_IsLeft = other.m_IsLeft;
-	m_Health = other.m_Health;
-}
-
-ScottPilgrim& ScottPilgrim::operator=(const ScottPilgrim& other)
-{
-	if (this != &other)
-	{
-		m_Position = other.m_Position;
-		m_Width = other.m_Width;
-		m_Height = other.m_Height;
-		m_ptrSoundEffects = other.m_ptrSoundEffects;
-		m_IsLeft = other.m_IsLeft;
-		m_Health = other.m_Health;
-	}
-	return *this;
-}
-
-ScottPilgrim::ScottPilgrim(ScottPilgrim&& other) noexcept 
-	: m_Position{ std::move(other.m_Position) }
-	, m_Width{ std::move(other.m_Width) }
-	, m_ptrSoundEffects{std::move(other.m_ptrSoundEffects)}
-	, m_Height{ std::move(other.m_Height) }
-	, m_Health{ std::move(other.m_Health) }
-{
-	other.m_ptrSpriteSheet = nullptr;
-}
-
-ScottPilgrim& ScottPilgrim::operator=(ScottPilgrim&& other) noexcept
-{
-	if (this != &other)
-	{
-		m_Position = std::move(other.m_Position);
-		m_Width = std::move(other.m_Width);
-		m_Height = std::move(other.m_Height);
-		m_ptrSoundEffects = std::move(other.m_ptrSoundEffects);
-		m_IsLeft = std::move(other.m_IsLeft);
-		m_Health = std::move(other.m_Health);
-		other.m_ptrSpriteSheet = nullptr;
-	}
-	return *this;
-}
-
 void ScottPilgrim::Draw() const
 {
 	float CollumnWidth{ m_ptrSpriteSheet->GetWidth() / 18.f }; // Width that will be taken from spritesheet
@@ -724,9 +679,9 @@ void ScottPilgrim::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f
 
 			if (utils::Raycast(MapSvg[VectorIndex], Point2f{ m_PlayerHitboxTransformed[1].x - 1.f, m_PlayerHitboxTransformed[1].y + yLength }, Point2f{ m_PlayerHitboxTransformed[0].x + 1.f, m_PlayerHitboxTransformed[0].y + yLength }, m_Hitinfo))
 			{
-				if (m_IsFalling)
+				if (m_IsFalling && m_HitFromTheFront)
 				{
-					if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f;
+					if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f + 15.f;
 					else m_Position.x = m_Hitinfo.intersectPoint.x + 3.f;
 				}
 				else
@@ -762,7 +717,7 @@ void ScottPilgrim::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f
 			|| utils::Raycast(MapSvg[VectorIndex], Point2f{ m_PlayerHitboxTransformed[1].x, m_PlayerHitboxTransformed[1].y - 1.f }, Point2f{ m_PlayerHitboxTransformed[1].x, m_PlayerHitboxTransformed[1].y + yLength }, m_Hitinfo))
 			&& m_IsFalling == false && m_IsJumping == false)
 		{
-			if (m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 3.f;
+			if (m_Position.y >= 350.f) m_Position.y = m_Hitinfo.intersectPoint.y - 4.f;
 			else m_Position.y = m_Hitinfo.intersectPoint.y;
 		}
 
@@ -817,19 +772,6 @@ void ScottPilgrim::CheckKeys(float elapsedSec, bool moveRight, bool moveLeft, bo
 			}
 		}
 		
-		//if(m_Position.y <= -3.0f)
-		//{
-		//	m_Position.y = -3.0f;
-		//}
-		//else if (m_Position.y >= 430.0f)
-		//{
-		//	m_Position.y = 430.0f;
-		//}
-
-		//if(m_Position.x <= 0.0f)
-		//{
-		//	m_Position.x = 0.0f;
-		//}
 	}
 }
 

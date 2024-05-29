@@ -21,37 +21,6 @@ PlayerUI::~PlayerUI()
 	m_ptrSpriteUI = nullptr;
 }
 
-PlayerUI::PlayerUI(const PlayerUI& other): PlayerUI(other.m_Size)
-{
-
-}
-
-PlayerUI& PlayerUI::operator=(const PlayerUI& other)
-{
-	if (this != &other)
-	{
-		m_Size = other.m_Size;
-	}
-	return *this;
-}
-
-PlayerUI::PlayerUI(PlayerUI&& other) noexcept : m_Size{std::move(other.m_Size)}
-{
-	other.m_ptrSpriteSheet = nullptr;
-	other.m_ptrSpriteUI = nullptr;
-}
-
-PlayerUI& PlayerUI::operator=(PlayerUI&& other) noexcept
-{
-	if (this != &other)
-	{
-		m_Size = std::move(other.m_Size);
-		other.m_ptrSpriteSheet = nullptr;
-		other.m_ptrSpriteUI = nullptr;
-	}
-	return *this;
-}
-
 void PlayerUI::Draw() const
 {
 	float CollumnWidth{ m_ptrSpriteSheet->GetWidth() / 15.f };

@@ -5,6 +5,7 @@ EnemyLee::EnemyLee(Point2f position, float width, float height, SoundEffects* So
 {
 	m_Health = 35;
 	m_MaxChoiceDelay = 2;
+	m_BlockChancePercent = 20;
 }
 
 EnemyLee::~EnemyLee() noexcept
@@ -50,6 +51,7 @@ void EnemyLee::UpdateChoicesDelay(const Point2f& PlayerPosition, const Point2f& 
 			float ObjectDistance{ 90.f };
 
 			m_IsMoving = true;
+			m_IsLeft = true;
 			if (ObjectIsLeft)
 			{
 				m_NewPosition.x = ObjectPosition.x - ObjectDistance;

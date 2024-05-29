@@ -38,46 +38,7 @@ DamageNumbers::~DamageNumbers() noexcept
 	--m_InstanceCounter;
 }
 
-DamageNumbers::DamageNumbers(const DamageNumbers& other) : DamageNumbers(other.m_Position, other.m_Size, other.m_FrameNR)
-{
-}
-
-DamageNumbers& DamageNumbers::operator=(const DamageNumbers& other)
-{
-	if (this != &other)
-	{
-		m_Position = other.m_Position;
-		m_Size = other.m_Size;
-		m_FrameNR = other.m_FrameNR;
-		m_LifetimeCounter = other.m_LifetimeCounter;
-	}
-	return *this;
-}
-
-DamageNumbers::DamageNumbers(DamageNumbers&& other):
-  m_Position{ std::move(other.m_Position) }
-, m_Size{ std::move(other.m_Size) }
-, m_FrameNR{ std::move(other.m_FrameNR) }
-{
-	other.m_ptrSpriteSheet = nullptr;
-	other.m_ptrKapowSprite = nullptr;
-}
-
-DamageNumbers& DamageNumbers::operator=(DamageNumbers&& other)
-{
-	if (this != &other)
-	{
-		m_Position = std::move(other.m_Position);
-		m_Size = std::move(other.m_Size);
-		m_FrameNR = std::move(other.m_FrameNR);
-		m_LifetimeCounter = std::move(other.m_LifetimeCounter);
-		other.m_ptrSpriteSheet = nullptr;
-		other.m_ptrKapowSprite = nullptr;
-	}
-	return *this;
-}
-
-void DamageNumbers::Draw() const
+void DamageNumbers::Draw() const noexcept
 {
 	if(m_IsKapowEffect)
 	{

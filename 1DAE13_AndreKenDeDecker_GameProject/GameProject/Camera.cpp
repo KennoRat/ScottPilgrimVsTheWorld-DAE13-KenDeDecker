@@ -3,7 +3,7 @@
 
 Camera::Camera(float screenWidth, float screenHeight, const Point2f& Position) : m_ScreenWidth{ screenWidth }, m_ScreenHeight{screenHeight}, m_CameraPosition{Position}
 {
-
+	m_IsMoving = false;
 }
 
 void Camera::Update(float elapsedSec)
@@ -23,7 +23,12 @@ void Camera::Update(float elapsedSec)
 
 void Camera::Aim(float levelWidth, float levelHeight, const Point2f& trackCenter)
 {
-	if (m_GoToPosition.x != trackCenter.x || m_GoToPosition.y != trackCenter.y ) m_GoToPosition = trackCenter;
+	if (m_GoToPosition.x != trackCenter.x || m_GoToPosition.y != trackCenter.y)
+	{
+		m_GoToPosition = trackCenter;
+		m_IsMoving = true;
+	}
+	else m_IsMoving = false;
 
 	Point2f bottomLeftPosition{ m_CameraPosition.x - m_ScreenWidth/2.f, m_CameraPosition.y - m_ScreenHeight/3.3f};
 
@@ -53,4 +58,9 @@ void Camera::Aim(float levelWidth, float levelHeight, const Point2f& trackCenter
 void Camera::Reset()
 {
 	glPopMatrix();
+}
+
+bool Camera::GetIsMoving() const
+{
+	return m_IsMoving;
 }

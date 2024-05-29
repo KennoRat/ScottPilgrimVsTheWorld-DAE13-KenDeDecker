@@ -4,9 +4,12 @@
 Texture* EnemyMike::m_ptrMikeSpriteSheet{ nullptr };
 Texture* EnemyMike::m_ptrLeeSpriteSheet{ nullptr };
 Texture* EnemyMike::m_ptrLukeSpriteSheet{ nullptr };
+Texture* EnemyMike::m_ptrRichardSpriteSheet{ nullptr };
 int EnemyMike::m_MikeInstanceCounter{ 0 };
 int EnemyMike::m_LeeInstanceCounter{ 0 };
 int EnemyMike::m_LukeInstanceCounter{ 0 };
+int EnemyMike::m_RichardInstanceCounter{ 0 };
+
 
 
 EnemyMike::EnemyMike(Point2f position, float width, float height, SoundEffects* SoundEffects, const std::string& EnemyType): m_Position{position}, m_Width{width}, m_Height{height}, m_ptrSoundEffects{SoundEffects}, m_EnemyType{EnemyType}
@@ -40,6 +43,7 @@ EnemyMike::EnemyMike(Point2f position, float width, float height, SoundEffects* 
 	m_Health = 20;
 	m_GotLightHitAmount = 0;
 	m_ObjectRumble = 0;
+	m_BlockChancePercent = 15;
 	m_Velocity = Vector2f{ 200.f, 150.f };
 	m_FrameNR = 0.f;
 	m_InitialJumpPosition = Point2f{0.f, 0.f};
@@ -122,6 +126,17 @@ EnemyMike::EnemyMike(Point2f position, float width, float height, SoundEffects* 
 
 		m_ptrSpriteSheet = m_ptrLukeSpriteSheet;
 	}
+	else if (m_EnemyType == "Richard")
+	{
+		++m_RichardInstanceCounter;
+
+		if (m_RichardInstanceCounter == 1)
+		{
+			m_ptrRichardSpriteSheet = new Texture("EnemyRichard_Sprite.png");
+		}
+
+		m_ptrSpriteSheet = m_ptrRichardSpriteSheet;
+	}
 	
 }
 
@@ -137,51 +152,6 @@ EnemyMike::~EnemyMike()
 
 		--m_MikeInstanceCounter;
 	}
-}
-
-EnemyMike::EnemyMike(const EnemyMike& other): EnemyMike{other.m_Position, other.m_Width, other.m_Height, other.m_ptrSoundEffects}
-{
-	m_IsLeft = other.m_IsLeft;
-	m_Health = other.m_Health;
-}
-
-EnemyMike& EnemyMike::operator=(const EnemyMike& other)
-{
-	if (this != &other)
-	{
-		m_Position = other.m_Position;
-		m_Width = other.m_Width;
-		m_Height = other.m_Height;
-		m_IsLeft = other.m_IsLeft;
-		m_Health = other.m_Health;
-		m_ptrSoundEffects = other.m_ptrSoundEffects;
-	}
-	return *this;
-}
-
-EnemyMike::EnemyMike(EnemyMike&& other) noexcept 
-	: m_Position{ std::move(other.m_Position) }
-	, m_Width{ std::move(other.m_Width) }
-	, m_ptrSoundEffects{std::move(other.m_ptrSoundEffects)}
-	, m_Height{ std::move(other.m_Height) }
-	, m_Health{ std::move(other.m_Health)}
-{
-	other.m_ptrSpriteSheet = nullptr;
-}
-
-EnemyMike& EnemyMike::operator=(EnemyMike&& other) noexcept
-{
-	if (this != &other)
-	{
-		m_Position = std::move(other.m_Position);
-		m_Width = std::move(other.m_Width);
-		m_Height = std::move(other.m_Height);
-		m_ptrSoundEffects = std::move(other.m_ptrSoundEffects);
-		m_IsLeft = std::move(other.m_IsLeft);
-		m_Health = std::move(other.m_Health);
-		other.m_ptrSpriteSheet = nullptr;
-	}
-	return *this;
 }
 
 void EnemyMike::Draw() const
@@ -407,8 +377,6 @@ void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition, const st
 		m_MaxAnimation = 0.09f;
 		UpdateAnimation();
 
-		m_BlockingCounter += elapsedSec;
-		UpdateKeepBlocking(elapsedSec);
 		break;
 	case EnemyMike::Status::PickUp:
 		m_MaxFrame = 1.f;
@@ -470,6 +438,12 @@ void EnemyMike::Update(float elapsedSec, const Point2f& PlayerPosition, const st
 	{
 		m_StunnedCounter += elapsedSec;
 		UpdateStunned();
+	}
+
+	if(m_IsBlocking)
+	{
+		m_BlockingCounter += elapsedSec;
+		UpdateKeepBlocking(elapsedSec);
 	}
 
 	if (m_IsMoving) GoToRandomPosition(elapsedSec);
@@ -555,12 +529,13 @@ void EnemyMike::UpdateChoicesDelay(const Point2f& PlayerPosition, const Point2f&
 
 		if (RandomChoice >= 70)
 		{
-			int MoveXDistance{ 300 };
+			int MoveXDistance{ 250 };
 			int MoveYDistance{ 50 };
+			int RandomPos{ rand() % 2 };
 
 			m_IsMoving = true;
-			if (m_Position.x < PlayerPosition.x) m_NewPosition.x = PlayerPosition.x - float(rand() % MoveXDistance + 350.f);
-			else m_NewPosition.x = PlayerPosition.x + float(rand() % MoveXDistance + 350.f);
+			if (RandomPos == 0) m_NewPosition.x = PlayerPosition.x - float(rand() % MoveXDistance + 300.f);
+			else m_NewPosition.x = PlayerPosition.x + float(rand() % MoveXDistance + 300.f);
 			m_NewPosition.y = PlayerPosition.y + float(rand() % MoveYDistance - (MoveYDistance / 2.f));
 			if (m_HasPickUpObject) m_EnemyStatus = Status::PickUpWalk;
 			else m_EnemyStatus = Status::Walking;
@@ -570,6 +545,7 @@ void EnemyMike::UpdateChoicesDelay(const Point2f& PlayerPosition, const Point2f&
 			float ObjectDistance{ 90.f };
 
 			m_IsMoving = true;
+			m_IsLeft = true;
 			if (ObjectIsLeft)
 			{
 				m_NewPosition.x = ObjectPosition.x - ObjectDistance;
@@ -668,6 +644,7 @@ void EnemyMike::UpdateStunned()
 		m_GotLightHitAmount = 4;
 		m_IsStunned = false;
 		m_StunnedCounter -= m_MAX_STUNNED_DELAY;
+		std::cout << "UpdateStunned check" << std::endl;
 	}
 	else
 	{
@@ -769,7 +746,8 @@ void EnemyMike::Block()
 	m_EnemyStatus = Status::Block;
 	m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::Block);
 	m_IsBlocking = true;
-	m_IsDamaged = false;
+	m_IsMoving = false;
+	//m_IsDamaged = false;
 }
 
 void EnemyMike::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>& MapSvg)
@@ -794,12 +772,12 @@ void EnemyMike::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>&
 			m_IsMoving = false;
 			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f - 3.f;
 			else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
-			if (m_IsBlocking)
+			/*if (m_IsBlocking)
 			{
 				m_IsBlocking = false;
 				m_IsDamaged = false;
 				m_BlockingCounter = 0.f;
-			}
+			}*/
 		}
 
 
@@ -845,83 +823,85 @@ void EnemyMike::ResetSprite() const
 void EnemyMike::CheckHit(const std::vector<Point2f>& Attackbox, int GetDamage, bool JustToCheckCollision, bool GetThrownInTheAir, bool GetUppercut, bool IsAnObject)
 {
 
-	if(m_IsDamaged == false && m_IsAlive && m_EnemyStatus != Status::OnTheGround)
+	if (JustToCheckCollision && utils::Raycast(Attackbox, Point2f(m_HitboxTransformed[1]), Point2f(m_HitboxTransformed[2]), m_Hitinfo) || (IsAnObject && utils::Raycast(Attackbox, Point2f(m_HitboxTransformed[0]), Point2f(m_HitboxTransformed[3]), m_Hitinfo)))
+	{
+		m_IsColliding = true;
+	}
+
+	if((m_IsDamaged == false || ((GetUppercut || GetThrownInTheAir) && m_IsFalling == false)) && m_IsAlive && m_EnemyStatus != Status::OnTheGround && m_IsBlocking == false)
 	{
 		if (utils::Raycast(Attackbox, Point2f(m_HitboxTransformed[1]), Point2f(m_HitboxTransformed[2]), m_Hitinfo) || (IsAnObject && utils::Raycast(Attackbox, Point2f(m_HitboxTransformed[0]), Point2f(m_HitboxTransformed[3]), m_Hitinfo)))
 		{
 			int ChanceToBlock{ rand() % 100 };
-			if (ChanceToBlock >= 80 && m_GotLightHitAmount < 3 && m_HasPickUpObject == false && JustToCheckCollision == false)
+			if (ChanceToBlock < m_BlockChancePercent && m_IsStunned == false && m_HasPickUpObject == false && JustToCheckCollision == false && GetUppercut == false)
 			{
 				Block();
 			}
-			else if (m_IsBlocking == false)
+			else
 			{
-				if (JustToCheckCollision)
+				ResetFrame();
+				m_Health -= GetDamage;
+				m_IsMoving = false;
+				m_JustSpawned = false;
+				m_IsAttacking = false;
+				m_IsAggressive = false;
+				m_HasPickUpObject = false;
+				m_ptrHoldingObject = nullptr;
+
+				if (m_Health <= 0) m_IsAlive = false;
+
+				if (m_IsAlive == false && GetUppercut == false && GetThrownInTheAir == false)
 				{
-					m_IsColliding = true;
+					const float JUMP_SPEED{ 200.f };
+					const float THROWBACK_SPEED{ 100.f };
+					m_EnemyStatus = Status::Falling;
+					m_InitialJumpPosition = m_Position;
+					m_Velocity.y = JUMP_SPEED;
+					m_Velocity.x = THROWBACK_SPEED;
+					m_Position.y += 5.f;
+					m_IsFalling = true;
+					m_GotLightHitAmount = 0;
+					m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttack);
+				}
+				else if (GetUppercut)
+				{
+					const float JUMP_SPEED{ 1000.f };
+					m_EnemyStatus = Status::Falling;
+					m_InitialJumpPosition = m_Position;
+					m_Velocity.y = JUMP_SPEED;
+					m_Position.y += 5.f;
+					m_IsFalling = true;
+					m_GotLightHitAmount = 0;
+					m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::Uppercut);
+				}
+				else if (GetThrownInTheAir)
+				{
+					const float JUMP_SPEED{ 500.f };
+					const float THROWBACK_SPEED{ 800.f };
+					m_EnemyStatus = Status::Falling;
+					m_InitialJumpPosition = m_Position;
+					m_Velocity.y = JUMP_SPEED;
+					m_Velocity.x = THROWBACK_SPEED;
+					m_Position.y += 5.f;
+					m_IsFalling = true;
+					m_GotLightHitAmount = 0;
+					m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttackFollow);
 				}
 				else
 				{
-					ResetFrame();
-					m_Health -= GetDamage;
-					m_IsMoving = false;
-					m_JustSpawned = false;
-					m_IsAttacking = false;
-					m_IsAggressive = false;
-					m_HasPickUpObject = false;
-					m_ptrHoldingObject = nullptr;
-
-					if (m_Health <= 0) m_IsAlive = false;
-
-					if (m_IsAlive == false && GetUppercut == false && GetThrownInTheAir == false)
+					m_EnemyStatus = Status::Hit;
+					++m_GotLightHitAmount;
+					if (m_GotLightHitAmount == 3)
 					{
-						const float JUMP_SPEED{ 200.f };
-						const float THROWBACK_SPEED{ 100.f };
-						m_EnemyStatus = Status::Falling;
-						m_InitialJumpPosition = m_Position;
-						m_Velocity.y = JUMP_SPEED;
-						m_Velocity.x = THROWBACK_SPEED;
-						m_Position.y += 5.f;
-						m_IsFalling = true;
-						m_GotLightHitAmount = 0;
-						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttack);
+						m_DamagedWhileStunned = true;
+						m_StunnedCounter = 0.f;
 					}
-					else if (GetUppercut)
-					{
-						const float JUMP_SPEED{ 1000.f };
-						m_EnemyStatus = Status::Falling;
-						m_InitialJumpPosition = m_Position;
-						m_Velocity.y = JUMP_SPEED;
-						m_Position.y += 5.f;
-						m_IsFalling = true;
-						m_GotLightHitAmount = 0;
-						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::Uppercut);
-					}
-					else if (GetThrownInTheAir)
-					{
-						const float JUMP_SPEED{ 500.f };
-						const float THROWBACK_SPEED{ 800.f };
-						m_EnemyStatus = Status::Falling;
-						m_InitialJumpPosition = m_Position;
-						m_Velocity.y = JUMP_SPEED;
-						m_Velocity.x = THROWBACK_SPEED;
-						m_Position.y += 5.f;
-						m_IsFalling = true;
-						m_GotLightHitAmount = 0;
-						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttackFollow);
-					}
-					else
-					{
-						m_EnemyStatus = Status::Hit;
-						++m_GotLightHitAmount;
-						if (m_GotLightHitAmount == 3) m_DamagedWhileStunned = true;;
-						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::LightAttackHIt);
-						std::cout << "LightAttack Hit" << std::endl;
-					}
-					m_IsDamaged = true;
-					m_IsHit = true;
-					ResetFrame();
+					m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::LightAttackHIt);
+					//std::cout << "LightAttack Hit" << std::endl;
 				}
+				m_IsDamaged = true;
+				m_IsHit = true;
+				ResetFrame();
 			}
 		}
 	}
@@ -965,6 +945,7 @@ bool EnemyMike::GetIsBlocking() const
 
 bool EnemyMike::GetIsColliding() const
 {
+	std::cout << "Get Is colliding check: " << m_IsColliding << std::endl;
 	return m_IsColliding;
 }
 
@@ -1003,14 +984,14 @@ bool EnemyMike::GetIsHit() const
 	return m_IsHit;
 }
 
+bool EnemyMike::GetIsStunned() const
+{
+	return m_IsStunned;
+}
+
 int EnemyMike::GetHealth() const
 {
 	return m_Health;
-}
-
-int EnemyMike::GetGotLightHitAmount() const
-{
-	return m_GotLightHitAmount;
 }
 
 int EnemyMike::GetObjectRumble() const

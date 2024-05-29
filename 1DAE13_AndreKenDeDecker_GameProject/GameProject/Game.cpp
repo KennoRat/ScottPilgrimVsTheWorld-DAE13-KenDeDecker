@@ -32,11 +32,16 @@ void Game::Initialize( )
 
 	m_ptrObjects.push_back(new Objects(Point2f{ 1000.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f, m_ptrSoundEffects));
 	m_ptrObjects.push_back(new Objects(Point2f{ 700.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f, m_ptrSoundEffects));
+	m_ptrObjects.push_back(new Objects(Point2f{ 3900.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f, m_ptrSoundEffects));
 
 	//Fight Areas
 	m_FightAreasXPosition.push_back(1050.f);
 	m_FightAreasXPosition.push_back(2860.f);
+	m_FightAreasXPosition.push_back(3770.f);
 	m_FightAreasXPosition.push_back(20000.f);
+
+	//Snow
+	m_ptrSnowEffect = new SnowEffect(GetViewPort().width, GetViewPort().height);
 
 	//Map Bounds //Transform Map Collisions
 
@@ -64,6 +69,8 @@ void Game::Cleanup( )
 	m_ptrLevel1Music = nullptr;
 	delete m_ptrSoundEffects;
 	m_ptrSoundEffects = nullptr;
+	delete m_ptrSnowEffect;
+	m_ptrSnowEffect = nullptr;
 	
 	for (EnemyMike* Enemies : m_ptrEnemies)
 	{
@@ -87,6 +94,12 @@ void Game::Cleanup( )
 	{
 		delete Objects;
 		Objects = nullptr;
+	}
+
+	for(HitEffects* Effects: m_ptrHitEffects)
+	{
+		delete Effects;
+		Effects = nullptr;
 	}
 
 }
@@ -200,9 +213,10 @@ void Game::Update(float elapsedSec)
 	}
 
 	//Play No enemies Hit effect
-	if (m_ptrPlayer->CheckIfAttackBoxIsOn() && m_PlayerHasHitAnEnemy == false && m_PlayerLightAttacked && m_PlayNoHitEffect)
+	if (m_ptrPlayer->CheckIfAttackBoxIsOn() && m_PlayerHasHitAnEnemy == false && m_PlayNoHitEffect)
 	{
-		m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HitAir);
+		if(m_PlayerLightAttacked) m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HitAir);
+		else if(m_PlayerHeavyAttacked) m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttackAir);
 		m_PlayNoHitEffect = false;
 	}
 
@@ -227,6 +241,7 @@ void Game::Update(float elapsedSec)
 
 		const float PLAYER_VS_ENEMY_Y_DISTANCE{ 30.f };
 		const Point2f DAMAGE_POSITION{ Point2f{ Enemies->GetPosition().x + m_ENEMY_WIDTH / 4.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT } };
+		const Point2f HITEFFECT_POSITION{ Point2f{ m_ptrPlayer->GetAttackBox()[0].x - m_HITEFFECT_SIZE/2.f, m_ptrPlayer->GetAttackBox()[0].y - m_HITEFFECT_SIZE / 2.f}};
 
 		//See if player is on the same Y position to hit enemies
 		if (m_ptrPlayer->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
@@ -244,7 +259,9 @@ void Game::Update(float elapsedSec)
 							m_PlayerHasHitAnEnemy = true;
 						}
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 6));
+						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
 					}
+					else if (Enemies->GetIsBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE, true));
 				}
 				else
 				{
@@ -253,7 +270,11 @@ void Game::Update(float elapsedSec)
 
 					if (Enemies->GetIsHit())
 					{
-						if(m_ptrPlayer->GetHasPickedUpAnObject()) m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 7));
+						if (m_ptrPlayer->GetHasPickedUpAnObject())
+						{
+							m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 7));
+							m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
+						}
 						else
 						{
 							if (m_PlayerHasHitAnEnemy == false)
@@ -262,14 +283,16 @@ void Game::Update(float elapsedSec)
 								m_PlayerHasHitAnEnemy = true;
 							}
 							m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 2));
+							m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
 						}
 					}
+					else if (Enemies->GetIsBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE, true));
 				}
 
 			}
 			else if (m_PlayerHeavyAttacked)
 			{
-				if (m_ptrPlayer->GetHeavyAttackCounter() == 1)
+				if (m_ptrPlayer->GetHeavyAttackCounter() == 1 || Enemies->GetIsStunned())
 				{
 					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 5, false, true);
 					if (Enemies->GetIsHit())
@@ -280,7 +303,9 @@ void Game::Update(float elapsedSec)
 							m_PlayerHasHitAnEnemy = true;
 						}
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 5));
+						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
 					}
+					else if (Enemies->GetIsBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE, true));
 				}
 				else
 				{
@@ -293,7 +318,9 @@ void Game::Update(float elapsedSec)
 							m_PlayerHasHitAnEnemy = true;
 						}
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 4));
+						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
 					}
+					else if (Enemies->GetIsBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE, true));
 				}
 			}
 
@@ -321,6 +348,7 @@ void Game::Update(float elapsedSec)
 		{
 			//std::cout << "Enemy is Hitting" << std::endl;
 			const Point2f DAMAGE_POSITION_PLAYER{ Point2f{ m_ptrPlayer->GetPosition().x + m_PLAYER_WIDTH / 4.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 3.f * 2.f}};
+			const Point2f HITEFFECT_POSITION_PLAYER{ Point2f{ Enemies->GetAttackBox()[3].x - m_HITEFFECT_SIZE / 2.f, Enemies->GetAttackBox()[3].y - m_HITEFFECT_SIZE / 2.f} };
 
 			if(Enemies->GetHasPickedUp())
 			{
@@ -330,8 +358,10 @@ void Game::Update(float elapsedSec)
 					if (m_ptrPlayer->GetIsDamaged())
 					{
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 7));
+						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE));
 						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleHit);
 					}
+					else if(m_ptrPlayer->GetIsHitWhileBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE, true));
 				}
 			}
 			else
@@ -342,7 +372,9 @@ void Game::Update(float elapsedSec)
 					if (m_ptrPlayer->GetIsDamaged())
 					{
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 2));
+						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE));
 					}
+					else if (m_ptrPlayer->GetIsHitWhileBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE, true));
 				}
 				else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick)
 				{
@@ -350,15 +382,20 @@ void Game::Update(float elapsedSec)
 					if (m_ptrPlayer->GetIsDamaged())
 					{
 						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
+						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE));
 					}
+					else if (m_ptrPlayer->GetIsHitWhileBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE, true));
 				}
 			}
 		}
 
 		if (Enemies->CheckIdle())
 		{
-			if (m_ptrPlayer->GetPosition().x > Enemies->GetPosition().x) Enemies->SetIsLeft(false);
-			else Enemies->SetIsLeft(true);
+			if(Enemies->GetIsPickingUp() == false)
+			{
+				if (m_ptrPlayer->GetPosition().x > Enemies->GetPosition().x) Enemies->SetIsLeft(false);
+				else Enemies->SetIsLeft(true);
+			}
 			if(Enemies->GetHasPickedUp()) Enemies->m_EnemyStatus = EnemyMike::Status::PickUpIdle;
 			else Enemies->m_EnemyStatus = EnemyMike::Status::Idle;
 		}
@@ -383,7 +420,13 @@ void Game::Update(float elapsedSec)
 		{
 			m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::CoinSpawn);
 
-			if(Enemies->GetEnemyType() == "Lee" || Enemies->GetEnemyType() == "Luke")
+			if(Enemies->GetEnemyType() == "Richard")
+			{
+				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Dollar1));
+				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
+				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
+			}
+			else if(Enemies->GetEnemyType() == "Lee" || Enemies->GetEnemyType() == "Luke")
 			{
 				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
 				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
@@ -473,6 +516,25 @@ void Game::Update(float elapsedSec)
 		}
 	}
 
+	//HitEffects Update
+	for (HitEffects* Effects : m_ptrHitEffects)
+	{
+		Effects->Update(elapsedSec);
+	}
+
+	for(int HitEffectsIndex{}; HitEffectsIndex < m_ptrHitEffects.size(); ++HitEffectsIndex)
+	{
+		HitEffects* HitEffect = m_ptrHitEffects[HitEffectsIndex];
+
+		if (HitEffect->GetIsDone())
+		{
+			delete HitEffect;
+			m_ptrHitEffects.erase(m_ptrHitEffects.begin() + HitEffectsIndex);
+
+			--HitEffectsIndex;
+		}
+	}
+
 	//Fight Area
 	FightingAreaEvent();
 
@@ -486,6 +548,9 @@ void Game::Update(float elapsedSec)
 		//m_ptrLevel1Music->Play(true);
 		m_BackgroundMusicOn = true;
 	}
+
+	//Snow
+	m_ptrSnowEffect->Update(elapsedSec);
 }
 
 void Game::Draw( ) const
@@ -529,6 +594,12 @@ void Game::Draw( ) const
 		m_ptrPlayerUI->Draw();
 	}
 
+	//Draw HitEffects
+	for (HitEffects* Effects : m_ptrHitEffects)
+	{
+		Effects->Draw();
+	}
+
 	//Draw Damage
 	for (DamageNumbers* Damage : m_ptrDamageNumbers)
 	{
@@ -537,6 +608,9 @@ void Game::Draw( ) const
 
 	//Camera
 	m_ptrCamera->Reset();
+
+	//Draw Snow
+	m_ptrSnowEffect->Draw();
 	
 	//Draw PlayerUI
 	m_ptrPlayerUI->DrawUI();
@@ -552,7 +626,7 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 		{
 			for (EnemyMike* Enemies : m_ptrEnemies)
 			{
-				if ((Enemies->GetHealth() <= 2 || Enemies->GetGotLightHitAmount() == 3 ) && m_ptrPlayer->GetIsJumping() == false && m_PlayerUppercutAttack == false && m_ptrPlayer->GetHasPickedUpAnObject() == false)
+				if ((Enemies->GetHealth() <= 2 || Enemies->GetIsStunned()/* || Enemies->GetGotLightHitAmount() == 4*/) && m_ptrPlayer->GetIsJumping() == false && m_PlayerUppercutAttack == false && m_ptrPlayer->GetHasPickedUpAnObject() == false)
 				{
 					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), 0, true);
 					if (Enemies->GetIsColliding())
@@ -581,6 +655,7 @@ void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 			m_ptrPlayer->Attack(false, true);
 			m_PlayerHeavyAttacked = true;
 			m_PlayerResetHeavyAttackButton = false;
+			m_PlayNoHitEffect = true;
 		}
 	}
 	else if (e.keysym.sym == SDLK_l && (m_ptrPlayer->CheckIdle() || m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::Block))
@@ -688,34 +763,42 @@ void Game::PlayerKeys(float elapsedSec)
 	if (pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_W])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, true, false, true);
+		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, true, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_S])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, true, false, false, true);
+		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, true, false, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_A] && pStates[SDL_SCANCODE_W])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, true, true);
+		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, true, true);
 	}
 	else if (pStates[SDL_SCANCODE_A] && pStates[SDL_SCANCODE_S])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, true, false, true);
+		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, true, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_D])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, true, false);
+		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, true, false);
 	}
 	else if (pStates[SDL_SCANCODE_A])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, true);
+		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_S])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, false, false, true);
+		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, false, false, true);
 	}
 	else if (pStates[SDL_SCANCODE_W])
 	{
 		m_ptrPlayer->CheckKeys(elapsedSec, false, false, true);
+		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, false, true);
 	}
 	else if (m_ptrPlayer->CheckIdle())
 	{
@@ -780,7 +863,7 @@ void Game::SortYPosition(int Amount, const std::vector<EnemyMike*>& ptrEnemies) 
 		}
 
 		SortYPosition(AmountOfEnemiesAbove, m_ptrEnemiesAbove);
-		ptrEnemies[0]->Draw();
+		SortDrawObject(ptrEnemies[0]);
 		SortYPosition(AmountOfEnemiesBelow, m_ptrEnemiesBelow);
 
 	}
@@ -836,6 +919,12 @@ void Game::FightingAreaEvent()
 			m_ptrEnemies.push_back(new EnemyLee(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
 			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 200.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
 		}
+		else if(m_FightEvents == 2)
+		{
+			m_ptrEnemies.push_back(new EnemyRichard(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+			m_ptrEnemies.push_back(new EnemyRichard(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 200.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
+		}
 		++m_FightEvents;
 
 		m_StopCameraXPosition = m_FightAreasXPosition[0] + m_ptrPlayer->GetWidth() / 2.f;
@@ -853,5 +942,6 @@ void Game::FightingAreaEvent()
 	{
 		m_StopCamera = false;
 		m_TranformedBordersSvg.pop_back();
+		m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::GoSound);
 	}
 }

@@ -5,13 +5,13 @@
 class PlayerUI
 {
 public:
-	PlayerUI(float size);
+	explicit PlayerUI(float size);
 	~PlayerUI() noexcept;
 
-	PlayerUI(const PlayerUI& other);
-	PlayerUI& operator=(const PlayerUI& other);
-	PlayerUI(PlayerUI&& other) noexcept;
-	PlayerUI& operator=(PlayerUI&& other) noexcept;
+	PlayerUI(const PlayerUI& other) = delete;
+	PlayerUI& operator=(const PlayerUI& other) = delete;
+	PlayerUI(PlayerUI&& other) = delete;
+	PlayerUI& operator=(PlayerUI&& other) = delete;
 
 	void Draw() const;
 	void DrawUI() const;

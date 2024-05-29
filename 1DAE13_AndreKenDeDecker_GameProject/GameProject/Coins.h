@@ -12,15 +12,13 @@ public:
 		Cents5 = 1, Cents10 = 2, Cents25 = 3, Dollar1 = 4, Dollars2 = 5
 	};
 
-	Type m_CoinType;
-
-	Coins(Point2f position, float size, Type coin);
+	explicit Coins(Point2f position, float size, Type coin);
 	~Coins() noexcept;
 
-	Coins(const Coins& other);
-	Coins& operator=(const Coins& other);
-	Coins(Coins&& other) noexcept;
-	Coins& operator=(Coins&& other) noexcept;
+	Coins(const Coins& other) = delete;
+	Coins& operator=(const Coins& other) = delete;
+	Coins(Coins&& other) = delete;
+	Coins& operator=(Coins&& other) = delete;
 
 	void Draw() const;
 	void Update(float elapsedSec);
@@ -28,6 +26,7 @@ public:
 	std::vector<Point2f> GetHitbox() const;
 	int GetValue() const ;
 
+	Type m_CoinType;
 private:
 	static Texture* m_ptrSpriteSheet;
 	static int m_InstanceCounter;

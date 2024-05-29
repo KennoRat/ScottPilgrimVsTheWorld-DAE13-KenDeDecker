@@ -11,8 +11,14 @@ class EnemyMike;
 class Objects
 {
 public:
-	Objects(Point2f Position, float Width, float Height, SoundEffects* SoundEffects);
+	explicit Objects(Point2f Position, float Width, float Height, SoundEffects* SoundEffects);
 	~Objects();
+
+	//Rule of 5
+	Objects(const Objects& other) = delete;
+	Objects& operator=(const Objects& other) = delete;
+	Objects(Objects&& other) = delete;
+	Objects& operator=(Objects&& other) = delete;
 
 	void Draw() const;
 	void Update(float elapsedSec, const Point2f& Position, bool IsLeft, const std::vector<std::vector<Point2f>>& MapSvg);

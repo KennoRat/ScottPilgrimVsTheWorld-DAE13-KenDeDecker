@@ -13,13 +13,13 @@ class EnemyMike
 {
 public:
 
-	EnemyMike(Point2f position, float width, float height, SoundEffects* SoundEffects,const std::string& EnemyType = "Mike");
+	explicit EnemyMike(Point2f position, float width, float height, SoundEffects* SoundEffects,const std::string& EnemyType = "Mike");
 	virtual ~EnemyMike() noexcept;
 
-	EnemyMike(const EnemyMike& other);
-	EnemyMike& operator=(const EnemyMike& other);
-	EnemyMike(EnemyMike&& other) noexcept;
-	EnemyMike& operator=(EnemyMike&& other) noexcept;
+	EnemyMike(const EnemyMike& other) = delete;
+	EnemyMike& operator=(const EnemyMike& other) = delete;
+	EnemyMike(EnemyMike&& other) = delete;
+	EnemyMike& operator=(EnemyMike&& other) = delete;
 
 
 	void Draw() const;
@@ -40,8 +40,8 @@ public:
 	bool GetHasPickedUp() const;
 	bool GetIsPickingUp() const;
 	bool GetIsHit() const;
+	bool GetIsStunned() const;
 	int GetHealth() const;
-	int GetGotLightHitAmount() const;
 	int GetObjectRumble() const;
 	Point2f GetPosition() const;
 	std::vector<Point2f> GetAttackBox() const;
@@ -92,6 +92,7 @@ protected:
 	int m_Health;
 	int m_GotLightHitAmount;
 	int m_ObjectRumble;
+	int m_BlockChancePercent;
 	float m_Width;
 	float m_Height;
 	float m_FrameNR;
@@ -153,5 +154,7 @@ protected:
 	static int m_LeeInstanceCounter;
 	static Texture* m_ptrLukeSpriteSheet;
 	static int m_LukeInstanceCounter;
+	static Texture* m_ptrRichardSpriteSheet;
+	static int m_RichardInstanceCounter;
 };
 

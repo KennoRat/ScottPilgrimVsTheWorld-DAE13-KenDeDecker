@@ -66,6 +66,15 @@
     <ClCompile Include="SoundEffects.cpp">
       <Filter>Source Files\MyClasses\Effects</Filter>
     </ClCompile>
+    <ClCompile Include="HitEffects.cpp">
+      <Filter>Source Files\MyClasses\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyRichard.cpp">
+      <Filter>Source Files\MyClasses\World\Enemies</Filter>
+    </ClCompile>
+    <ClCompile Include="SnowEffect.cpp">
+      <Filter>Source Files\MyClasses\Effects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h">
@@ -102,6 +111,15 @@
       <Filter>Source Files\MyClasses\World\Enemies</Filter>
     </ClInclude>
     <ClInclude Include="SoundEffects.h">
+      <Filter>Source Files\MyClasses\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="HitEffects.h">
+      <Filter>Source Files\MyClasses\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyRichard.h">
+      <Filter>Source Files\MyClasses\World\Enemies</Filter>
+    </ClInclude>
+    <ClInclude Include="SnowEffect.h">
       <Filter>Source Files\MyClasses\Effects</Filter>
     </ClInclude>
   </ItemGroup>

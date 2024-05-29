@@ -6,15 +6,15 @@
 class DamageNumbers
 {
 public:
-	DamageNumbers(Point2f position, float Size, int number, bool Kapow = false);
+	explicit DamageNumbers(Point2f position, float Size, int number, bool Kapow = false);
 	~DamageNumbers() noexcept;
 
-	DamageNumbers(const DamageNumbers& other);
-	DamageNumbers& operator=(const DamageNumbers& other);
-	DamageNumbers(DamageNumbers&& other);
-	DamageNumbers& operator=(DamageNumbers&& other);
+	DamageNumbers(const DamageNumbers& other) = delete;
+	DamageNumbers& operator=(const DamageNumbers& other) = delete;
+	DamageNumbers(DamageNumbers&& other) = delete;
+	DamageNumbers& operator=(DamageNumbers&& other) = delete;
 
-	void Draw() const;
+	void Draw() const noexcept;
 	void Update(float elapsedSec);
 
 	bool GetIsDone() const;
