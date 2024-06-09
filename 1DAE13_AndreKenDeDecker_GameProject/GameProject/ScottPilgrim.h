@@ -33,6 +33,7 @@ public:
 	void CheckHit(const std::vector<Point2f>& Attackbox, bool EnemyIsLeft, int GetDamage, bool JustToCheckCollision = false, bool GetThrownInTheAir = false);
 	void Block(bool Unblock = false);
 	void HasPickedUpObject(bool HasPickUp, Objects* Object);
+	void Fall(Point2f position);
 
 	bool GetIsHit() const;
 	bool GetIsJumping() const;
@@ -44,6 +45,8 @@ public:
 	bool GetThrowObject() const;
 	bool GetIsBlocking() const;
 	bool GetIsHitWhileBlocking() const;
+	bool GetIsFalling() const;
+	bool GetIsFallInPit() const;
 	int GetHeavyAttackCounter() const;
 	int GetObjectRumble() const;
 	int GetHealth() const;
@@ -54,6 +57,10 @@ public:
 	Objects* GetHoldingObject() const;
 
 	void SetIsRunningTrigger(bool IsRunningTrigger);
+	void SetPosition(Point2f Position);
+	void SetPlayerHealth(int Health);
+	void SetShowHitboxes(bool Hitbox);
+	void SetIsAlive(bool Alive);
 	
 	enum class Status
 	{
@@ -90,6 +97,8 @@ private:
 	bool m_FlipObject;
 	bool m_ThrowObject;
 	bool m_HitFromTheFront;
+	bool m_FallInPit;
+	bool m_ShowHitboxesAndBorders;
 
 	int m_LightAttackCounter;
 	int m_HeavyAttackCounter;
@@ -98,6 +107,7 @@ private:
 
 	Point2f m_Position;
 	Point2f m_InitialJumpPosition;
+	Point2f m_PitPosition;
 
 	float m_Width;
 	float m_Height;

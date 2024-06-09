@@ -25,6 +25,9 @@
     <Filter Include="Source Files\MyClasses\World\Enemies">
       <UniqueIdentifier>{5bef4393-b004-4e4f-a5f7-c0107cb0ac90}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\MyClasses\Managers">
+      <UniqueIdentifier>{d9ca1425-6290-4cee-b422-8fb5afa065c9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp">
@@ -35,9 +38,6 @@
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Source Files\MyClasses</Filter>
     </ClCompile>
     <ClCompile Include="PlayerUI.cpp">
       <Filter>Source Files\MyClasses\Effects</Filter>
@@ -75,6 +75,18 @@
     <ClCompile Include="SnowEffect.cpp">
       <Filter>Source Files\MyClasses\Effects</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files\MyClasses\World</Filter>
+    </ClCompile>
+    <ClCompile Include="LevelManager.cpp">
+      <Filter>Source Files\MyClasses\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="Button.cpp">
+      <Filter>Source Files\MyClasses\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="SoundBarSetting.cpp">
+      <Filter>Source Files\MyClasses\Managers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h">
@@ -82,9 +94,6 @@
     </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Source Files\MyClasses</Filter>
     </ClInclude>
     <ClInclude Include="PlayerUI.h">
       <Filter>Source Files\MyClasses\Effects</Filter>
@@ -121,6 +130,18 @@
     </ClInclude>
     <ClInclude Include="SnowEffect.h">
       <Filter>Source Files\MyClasses\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Source Files\MyClasses\World</Filter>
+    </ClInclude>
+    <ClInclude Include="LevelManager.h">
+      <Filter>Source Files\MyClasses\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="Button.h">
+      <Filter>Source Files\MyClasses\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundBarSetting.h">
+      <Filter>Source Files\MyClasses\Managers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

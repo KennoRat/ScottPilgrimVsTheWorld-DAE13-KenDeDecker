@@ -27,7 +27,7 @@ SoundEffects::SoundEffects()
 	}
 }
 
-SoundEffects::~SoundEffects()
+SoundEffects::~SoundEffects() noexcept
 {
 	for(SoundEffect* Effects: m_ptrSoundEffects)
 	{
@@ -51,5 +51,13 @@ void SoundEffects::Stop()
 	for (SoundEffect* Effects : m_ptrSoundEffects)
 	{
 		Effects->StopAll();
+	}
+}
+
+void SoundEffects::SetVolume(int Volume)
+{
+	for (SoundEffect* Effects : m_ptrSoundEffects)
+	{
+		Effects->SetVolume(Volume);
 	}
 }

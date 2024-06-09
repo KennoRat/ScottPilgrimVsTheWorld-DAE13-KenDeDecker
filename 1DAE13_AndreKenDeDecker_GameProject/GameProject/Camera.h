@@ -3,7 +3,7 @@
 #include "utils.h"
 #include <math.h>
 
-class Camera
+class Camera final
 {
 public:
 	explicit Camera(float screenWidth, float screenHeight, const Point2f& Position);

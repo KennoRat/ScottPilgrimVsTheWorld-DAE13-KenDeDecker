@@ -3,7 +3,7 @@
 #include "Texture.h"
 #include "utils.h"
 
-class DamageNumbers
+class DamageNumbers final
 {
 public:
 	explicit DamageNumbers(Point2f position, float Size, int number, bool Kapow = false);

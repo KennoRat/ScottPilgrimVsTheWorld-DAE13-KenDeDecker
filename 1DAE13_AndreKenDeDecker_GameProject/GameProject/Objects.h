@@ -8,11 +8,11 @@
 class ScottPilgrim;
 class EnemyMike;
 
-class Objects
+class Objects final
 {
 public:
 	explicit Objects(Point2f Position, float Width, float Height, SoundEffects* SoundEffects);
-	~Objects();
+	~Objects() noexcept;
 
 	//Rule of 5
 	Objects(const Objects& other) = delete;
@@ -45,6 +45,7 @@ public:
 
 	void SetIsFlipped(bool IsFlipped);
 	void SetRumble(int Rumble);
+	void SetShowHitboxes(bool Hitbox);
 
 private:
 	static Texture* m_ptrSpriteSheet;
@@ -57,6 +58,7 @@ private:
 	bool m_IsLeft;
 	bool m_IsFlipped;
 	bool m_DoDamage;
+	bool m_ShowHitboxesAndBorders;
 	int m_Rumble;
 	float m_Width;
 	float m_Height;

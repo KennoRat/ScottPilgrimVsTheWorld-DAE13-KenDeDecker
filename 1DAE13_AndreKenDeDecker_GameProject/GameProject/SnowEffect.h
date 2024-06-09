@@ -1,6 +1,6 @@
 #pragma once
 #include "utils.h"
-class SnowEffect
+class SnowEffect final
 {
 public:
 	explicit SnowEffect(float ScreenWidth, float ScreenHeight);

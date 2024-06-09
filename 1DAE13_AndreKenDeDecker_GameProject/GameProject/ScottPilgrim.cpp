@@ -29,6 +29,8 @@ ScottPilgrim::ScottPilgrim(Point2f position, float width, float height, SoundEff
 	m_FlipObject = false;
 	m_ThrowObject = false;
 	m_HitFromTheFront = false;
+	m_FallInPit = false;
+	m_ShowHitboxesAndBorders = false;
 	m_LightAttackCounter = 0;
 	m_HeavyAttackCounter = 0;
 	m_ObjectRumble = 0;
@@ -48,6 +50,7 @@ ScottPilgrim::ScottPilgrim(Point2f position, float width, float height, SoundEff
 	m_ptrSpriteSheet = new Texture("PlayerScott_Sprite.png");
 	m_ChangedState = Status::Idle;
 	m_ScottStatus = Status::Idle;
+	m_PitPosition = Point2f{ 0.f, 0.f };
 
 	//Class Association
 	m_ptrHoldingObject = nullptr;
@@ -100,12 +103,15 @@ void ScottPilgrim::Draw() const
 	m_ptrSpriteSheet->Draw(dstRect, srcRect);
 	ResetSprite();
 
-	utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
-	utils::DrawPolygon(m_PlayerHitboxTransformed);
+	if(m_ShowHitboxesAndBorders)
+	{
+		utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
+		utils::DrawPolygon(m_PlayerHitboxTransformed);
 
 
-	utils::SetColor(Color4f(1.0f, 0.0f, 0, 1.0f));
-	utils::DrawPolygon(m_AttackBoxTransformed);
+		utils::SetColor(Color4f(1.0f, 0.0f, 0, 1.0f));
+		utils::DrawPolygon(m_AttackBoxTransformed);
+	}
 }
 
 void ScottPilgrim::Update(float elapsedSec, const std::vector<std::vector<Point2f>>& MapSvg)
@@ -466,11 +472,18 @@ void ScottPilgrim::UpdateAnimation()
 			}
 			else if (m_IsAlive == true && m_ScottStatus == Status::OnTheGround)
 			{
-				std::cout << "Getting Up is True" << std::endl;
+				//std::cout << "Getting Up is True" << std::endl;
 				m_IsOnTheGround = false;
 				m_ScottStatus = Status::GettingUp;
 				m_IsGettingUp = true;
 				m_AnimationCounter = 0.f;
+				if (m_PitPosition.x != 0.f && m_PitPosition.y != 0.f)
+				{
+					m_Position = m_PitPosition;
+					m_Health -= 10;
+					m_PitPosition = Point2f{ 0.f, 0.f };
+				}
+				m_FallInPit = false;
 			}
 		}
 		m_AnimationCounter -= m_MaxAnimation;
@@ -681,7 +694,7 @@ void ScottPilgrim::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f
 			{
 				if (m_IsFalling && m_HitFromTheFront)
 				{
-					if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f + 15.f;
+					if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f - 10.f;
 					else m_Position.x = m_Hitinfo.intersectPoint.x + 3.f;
 				}
 				else
@@ -1046,6 +1059,16 @@ bool ScottPilgrim::GetIsHitWhileBlocking() const
 	return m_IsHitWhileBlocking;
 }
 
+bool ScottPilgrim::GetIsFalling() const
+{
+	return m_IsFalling;
+}
+
+bool ScottPilgrim::GetIsFallInPit() const
+{
+	return m_FallInPit;
+}
+
 int ScottPilgrim::GetHeavyAttackCounter() const
 {
 	return m_HeavyAttackCounter;
@@ -1126,6 +1149,26 @@ void ScottPilgrim::SetIsRunningTrigger(bool IsRunningTrigger)
 	//std::cout << "RunningTrigger: " << m_IsRunningTrigger << std::endl;
 }
 
+void ScottPilgrim::SetPosition(Point2f Position)
+{
+	m_Position = Position;
+}
+
+void ScottPilgrim::SetPlayerHealth(int Health)
+{
+	m_Health = Health;
+}
+
+void ScottPilgrim::SetShowHitboxes(bool Hitbox)
+{
+	m_ShowHitboxesAndBorders = Hitbox;
+}
+
+void ScottPilgrim::SetIsAlive(bool Alive)
+{
+	m_IsAlive = Alive;
+}
+
 void ScottPilgrim::HasPickedUpObject(bool HasPickUp, Objects* Object)
 {
 	m_ScottStatus = Status::PickUp;
@@ -1134,4 +1177,24 @@ void ScottPilgrim::HasPickedUpObject(bool HasPickUp, Objects* Object)
 	m_IsPickingUp = true;
 	m_IsAttackBoxOn = false;
 	m_ptrHoldingObject = Object;
+}
+
+void ScottPilgrim::Fall(Point2f position)
+{
+	if(m_FallInPit == false)
+	{
+		m_ScottStatus = Status::Falling;
+		m_Velocity.y = 0.f;
+		m_Velocity.x = 300.f;
+		m_IsFalling = true;
+		m_IsDamaged = true;
+		if (m_IsLeft) m_PitPosition = Point2f{ position.x + 200.f, 310.f };
+		else m_PitPosition = Point2f{ position.x - 200.f, 310.f };
+		m_IsLeft = !m_IsLeft;
+		m_InitialJumpPosition.x = position.x;
+		m_FallInPit = true;
+		if (m_Health <= 0) m_IsAlive = false;
+		//std::cout << "Fall in pit: " << m_PitPosition.x << "  " << m_PitPosition.y << std::endl;
+	}
+	m_InitialJumpPosition.y = -180.f;
 }

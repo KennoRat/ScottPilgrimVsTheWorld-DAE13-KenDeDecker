@@ -39,6 +39,7 @@ EnemyMike::EnemyMike(Point2f position, float width, float height, SoundEffects* 
 	m_IsGoingToThrow = false;
 	m_IsHit = false;
 	m_DamagedWhileStunned = false;
+	m_ShowHitboxesAndBorders = false;
 
 	m_Health = 20;
 	m_GotLightHitAmount = 0;
@@ -54,7 +55,7 @@ EnemyMike::EnemyMike(Point2f position, float width, float height, SoundEffects* 
 	//Move Forward When Spawning
 	m_IsMoving = true;
 	m_JustSpawned = true;
-	float RandomForwardPosition{float(rand() % 100 + 250)};
+	float RandomForwardPosition{float(rand() % 600 + 250)};
 	m_NewPosition = Point2f{ m_Position.x - RandomForwardPosition, m_Position.y};
 
 	//Class Association
@@ -169,11 +170,14 @@ void EnemyMike::Draw() const
 		m_ptrSpriteSheet->Draw(dstRect, srcRect);
 		ResetSprite();
 
-		utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
-		utils::DrawPolygon(m_HitboxTransformed);
+		if(m_ShowHitboxesAndBorders)
+		{
+			utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
+			utils::DrawPolygon(m_HitboxTransformed);
 
-		utils::SetColor(Color4f(1.0f, 0.0f, 0, 1.0f));
-		utils::DrawPolygon(m_AttackBoxTransformed);
+			utils::SetColor(Color4f(1.0f, 0.0f, 0, 1.0f));
+			utils::DrawPolygon(m_AttackBoxTransformed);
+		}
 	}
 }
 
@@ -529,13 +533,13 @@ void EnemyMike::UpdateChoicesDelay(const Point2f& PlayerPosition, const Point2f&
 
 		if (RandomChoice >= 70)
 		{
-			int MoveXDistance{ 250 };
+			int MoveXDistance{ 350 };
 			int MoveYDistance{ 50 };
 			int RandomPos{ rand() % 2 };
 
 			m_IsMoving = true;
-			if (RandomPos == 0) m_NewPosition.x = PlayerPosition.x - float(rand() % MoveXDistance + 300.f);
-			else m_NewPosition.x = PlayerPosition.x + float(rand() % MoveXDistance + 300.f);
+			if (RandomPos == 0) m_NewPosition.x = PlayerPosition.x - float(rand() % MoveXDistance + 50.f);
+			else m_NewPosition.x = PlayerPosition.x + float(rand() % MoveXDistance + 200.f);
 			m_NewPosition.y = PlayerPosition.y + float(rand() % MoveYDistance - (MoveYDistance / 2.f));
 			if (m_HasPickUpObject) m_EnemyStatus = Status::PickUpWalk;
 			else m_EnemyStatus = Status::Walking;
@@ -770,7 +774,7 @@ void EnemyMike::CheckIfGoingOutOfBounds(const std::vector<std::vector<Point2f>>&
 		else if (utils::Raycast(MapSvg[VectorIndex], Point2f{m_HitboxTransformed[1].x - 1.f, m_HitboxTransformed[1].y + yLength}, Point2f{m_HitboxTransformed[0].x + 1.f, m_HitboxTransformed[0].y + yLength}, m_Hitinfo))
 		{
 			m_IsMoving = false;
-			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - m_Width / 2.f - 3.f;
+			if (m_IsLeft) m_Position.x = m_Hitinfo.intersectPoint.x - (m_Width / 2.f - 10.f);
 			else m_Position.x = m_Hitinfo.intersectPoint.x + 2.f;
 			/*if (m_IsBlocking)
 			{
@@ -989,6 +993,11 @@ bool EnemyMike::GetIsStunned() const
 	return m_IsStunned;
 }
 
+bool EnemyMike::GetIsMoving() const
+{
+	return m_IsMoving;
+}
+
 int EnemyMike::GetHealth() const
 {
 	return m_Health;
@@ -1037,6 +1046,11 @@ std::string EnemyMike::GetEnemyType() const
 void EnemyMike::SetIsLeft(bool IsLeft)
 {
 	m_IsLeft = IsLeft;
+}
+
+void EnemyMike::SetShowHitboxes(bool Hitbox)
+{
+	m_ShowHitboxesAndBorders = Hitbox;
 }
 
 void EnemyMike::ResetFrame()

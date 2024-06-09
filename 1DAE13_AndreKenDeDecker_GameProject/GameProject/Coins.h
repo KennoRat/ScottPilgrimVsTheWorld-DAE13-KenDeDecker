@@ -4,7 +4,7 @@
 #include "utils.h"
 #include "Matrix2x3.h"
 
-class Coins
+class Coins final
 {
 public:
 	enum class Type

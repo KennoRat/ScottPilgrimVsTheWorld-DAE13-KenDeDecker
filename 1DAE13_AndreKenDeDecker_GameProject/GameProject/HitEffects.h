@@ -2,7 +2,7 @@
 #include "Texture.h"
 #include "utils.h"
 
-class HitEffects
+class HitEffects final
 {
 public:
 	explicit HitEffects(Point2f position, float Size, bool Block = false);

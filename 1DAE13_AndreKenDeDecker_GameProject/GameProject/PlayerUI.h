@@ -2,7 +2,7 @@
 #include "Texture.h"
 #include "utils.h"
 
-class PlayerUI
+class PlayerUI final
 {
 public:
 	explicit PlayerUI(float size);

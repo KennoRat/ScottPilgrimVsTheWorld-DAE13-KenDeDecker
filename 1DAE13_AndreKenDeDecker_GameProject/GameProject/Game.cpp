@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Game.h"
 
+
 Game::Game( const Window& window ) 
 	:BaseGame{ window }
 {
@@ -14,699 +15,489 @@ Game::~Game( )
 
 void Game::Initialize( )
 {
-
-	//Sound
+	//Initialize Sound
 	m_ptrLevel1Music = new SoundStream("Sounds/AnotherWinter(Mixed).mp3");
+	m_ptrMenuMusic = new SoundStream("Sounds/ScottPilgrimAnthem.mp3");
+	m_ptrPauseMusic = new SoundStream("Sounds/PauseMusic.mp3");
 	m_ptrSoundEffects = new SoundEffects();
 
-	m_ptrPlayer = new ScottPilgrim(Point2f{ GetViewPort().left, GetViewPort().height / 4.f }, m_PLAYER_WIDTH, m_PLAYER_HEIGHT, m_ptrSoundEffects);
+	//Initialize Managers
+	m_ptrLevelManager = new LevelManager(GetViewPort(), m_ptrSoundEffects);
 
-	m_ptrMap = new Texture("Level1_Sprite.png");
+	//Initialize Menu
+	m_ptrMenuScott = new Texture("MenuScott_Sprite.png");
+	m_ptrMenuScreen = new Texture("MenuScreen_Sprite.png");
 
-	SVGParser::GetVerticesFromSvgFile("Level1_Sprite.svg", m_MapSvg);
-	SVGParser::GetVerticesFromSvgFile("CameraBorder.svg", m_CameraSvg);
+	m_ptrMenuButtons.push_back(new Button(Point2f(0.f, 330.f), 170.f, 80.f, "PLAY", true));
+	m_ptrMenuButtons.push_back(new Button(Point2f(105.f, 230.f), 390.f, 80.f, "HELP AND OPTIONS"));
 
-	m_ptrCamera = new Camera(GetViewPort().width, GetViewPort().height, m_ptrPlayer->GetPosition());
+	//Initialize PauseScreen
+	m_ptrPauseScreen = new Texture("PauseScreen_Sprite.png");
 
-	m_ptrPlayerUI = new PlayerUI(70.f);
+	m_ptrPauseButtons.push_back(new Button(Point2f(40.f, 370.f), 170.f, 80.f, "RESUME", true));
+	m_ptrPauseButtons.push_back(new Button(Point2f(105.f, 290.f), 390.f, 80.f, "HELP AND OPTIONS"));
+	m_ptrPauseButtons.push_back(new Button(Point2f(0.f, 210.f), 170.f, 80.f, "MENU"));
 
-	m_ptrObjects.push_back(new Objects(Point2f{ 1000.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f, m_ptrSoundEffects));
-	m_ptrObjects.push_back(new Objects(Point2f{ 700.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f, m_ptrSoundEffects));
-	m_ptrObjects.push_back(new Objects(Point2f{ 3900.f, GetViewPort().height / 4.f + 200.f }, 150.f, 100.f, m_ptrSoundEffects));
+	//Initialize Settings
+	m_ptrSettingsScreen = new Texture("SettingsScreen_Sprite.png");
+	m_ptrSettingsText = new Texture("SettingsScreenText_Sprite.png");
+	m_ptrBackgroundVolume = new SoundBarSetting(Point2f(1010.f, 440.f), 200.f, 50.f, m_BackgroundVolume);
+	m_ptrSFXVolume = new SoundBarSetting(Point2f(1010.f, 340.f), 200.f, 50.f, m_SFXVolume);
 
-	//Fight Areas
-	m_FightAreasXPosition.push_back(1050.f);
-	m_FightAreasXPosition.push_back(2860.f);
-	m_FightAreasXPosition.push_back(3770.f);
-	m_FightAreasXPosition.push_back(20000.f);
-
-	//Snow
-	m_ptrSnowEffect = new SnowEffect(GetViewPort().width, GetViewPort().height);
-
-	//Map Bounds //Transform Map Collisions
-
-	Matrix2x3 TranslationMat{};
-	TranslationMat.SetAsTranslate(Vector2f{ -50.f, -210.f });
-	Matrix2x3 ScaleMat{};
-	ScaleMat.SetAsScale(3.3f, 3.3f);
-	Matrix2x3 TransformMat{ TranslationMat * ScaleMat };
-	m_TransformedMapSvg = TransformMat.Transform(m_MapSvg[0]);
-
-	m_TranformedBordersSvg.push_back(m_TransformedMapSvg);
+	m_ptrSettingsButtons.push_back(new Button(Point2f(215.f, 430.f), 350.f, 85.f, "MUSIC VOLUME"));
+	m_ptrSettingsButtons.push_back(new Button(Point2f(175.f, 330.f), 280.f, 85.f, "SFX VOLUME"));
+	m_ptrSettingsButtons.push_back(new Button(Point2f(110.f, 230.f), 190.f, 85.f, "GO BACK"));
 }
 
 void Game::Cleanup( )
 {
-	delete m_ptrPlayer;
-	m_ptrPlayer = nullptr;
-	delete m_ptrMap;
-	m_ptrMap = nullptr;
-	delete m_ptrCamera;
-	m_ptrCamera = nullptr;
-	delete m_ptrPlayerUI;
-	m_ptrPlayerUI = nullptr;
+	// Delete Managers
+	delete m_ptrLevelManager;
+	m_ptrLevelManager = nullptr;
+
+
+	// Delete Menu
+	delete m_ptrMenuScott;
+	m_ptrMenuScott = nullptr;
+	delete m_ptrMenuScreen;
+	m_ptrMenuScreen = nullptr;
+
+	for(Button* Buttons: m_ptrMenuButtons)
+	{
+		delete Buttons;
+		Buttons = nullptr;
+	}
+
+	//Delete Settings
+	delete m_ptrSettingsScreen;
+	m_ptrSettingsScreen = nullptr;
+	delete m_ptrSettingsText;
+	m_ptrSettingsText = nullptr;
+
+	for (Button* Buttons : m_ptrSettingsButtons)
+	{
+		delete Buttons;
+		Buttons = nullptr;
+	}
+
+	delete m_ptrBackgroundVolume;
+	m_ptrBackgroundVolume = nullptr;
+	delete m_ptrSFXVolume;
+	m_ptrSFXVolume = nullptr;
+
+	//Delete PauseScreen
+	delete m_ptrPauseScreen;
+	m_ptrPauseScreen = nullptr;
+
+	for (Button* Buttons : m_ptrPauseButtons)
+	{
+		delete Buttons;
+		Buttons = nullptr;
+	}
+
+	//Sound
 	delete m_ptrLevel1Music;
 	m_ptrLevel1Music = nullptr;
+	delete m_ptrMenuMusic;
+	m_ptrMenuMusic = nullptr;
+	delete m_ptrPauseMusic;
+	m_ptrPauseMusic = nullptr;
 	delete m_ptrSoundEffects;
 	m_ptrSoundEffects = nullptr;
-	delete m_ptrSnowEffect;
-	m_ptrSnowEffect = nullptr;
-	
-	for (EnemyMike* Enemies : m_ptrEnemies)
-	{
-		delete Enemies;
-		Enemies = nullptr;
-	}
-
-	for(Coins* Money: m_ptrCoins)
-	{
-		delete Money;
-		Money = nullptr;
-	}
-
-	for(DamageNumbers* Damage: m_ptrDamageNumbers)
-	{
-		delete Damage;
-		Damage = nullptr;
-	}
-
-	for(Objects* Objects: m_ptrObjects)
-	{
-		delete Objects;
-		Objects = nullptr;
-	}
-
-	for(HitEffects* Effects: m_ptrHitEffects)
-	{
-		delete Effects;
-		Effects = nullptr;
-	}
 
 }
 
 void Game::Update(float elapsedSec)
 {
-	//Player Update
-	PlayerKeys(elapsedSec);
+	//Update Level
+	if(m_Playing) m_ptrLevelManager->Update(elapsedSec);
 
-	m_ptrPlayer->Update(elapsedSec, m_TranformedBordersSvg);
-
-	if (m_ptrPlayer->CheckIdle())
+	//Update Menu
+	if(m_MenuScreen)
 	{
-		m_PlayerLightAttacked = false;
-		m_PlayerUppercutAttack = false;
-		m_PlayerHeavyAttacked = false;
-	}
-
-	//Objects Update
-	for (Objects* Objects : m_ptrObjects)
-	{
-		float yPosition{ m_PLAYER_HEIGHT / 5.f * 3.f };
-		const float PLAYER_OBJECTS_Y_DISTANCE{ 30.f };
-		if (Objects->GetIsPickedUp() && Objects->GetPlayer() == m_ptrPlayer)
+		for (Button* Buttons : m_ptrMenuButtons)
 		{
-			float xPosition{ 10.f };
-			Objects->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - xPosition , m_ptrPlayer->GetPosition().y + yPosition }, m_ptrPlayer->GetIsLeft(), m_TranformedBordersSvg);
-
-			if (m_ptrPlayer->GetIsDamaged())
-			{
-				Objects->DroppedObject(m_ptrPlayer->GetPosition().y);
-			}
-
-			if (m_ptrPlayer->GetThrowObject()) Objects->ThrownObject(m_ptrPlayer->GetPosition().y);
-
-			if (Objects->GetIsFlipped() != m_ptrPlayer->GetFlipBox()) Objects->SetIsFlipped(m_ptrPlayer->GetFlipBox());
-
-			if (Objects->GetRumble() != m_ptrPlayer->GetObjectRumble()) Objects->SetRumble(m_ptrPlayer->GetObjectRumble());
-
-		}
-		else if(Objects->GetIsPickedUp() == false)
-		{
-			Objects->Update(elapsedSec, m_TranformedBordersSvg);
-
-			if (m_ptrPlayer->CheckIfAttackBoxIsOn())
-			{
-				if ((m_ptrPlayer->GetPosition().y >= Objects->GetPosition().y - PLAYER_OBJECTS_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Objects->GetPosition().y + PLAYER_OBJECTS_Y_DISTANCE)
-					&& Objects->CheckIfOverlapping(m_ptrPlayer->GetAttackBox()))
-				{
-					if (m_PlayerHeavyAttacked || (m_PlayerLightAttacked && m_ptrPlayer->GetHasPickedUpAnObject() == true))
-					{
-						Objects->Collision(m_ptrPlayer->GetAttackBox(), m_ptrPlayer->GetIsLeft());
-					}
-					else if (m_PlayerLightAttacked && m_ptrPlayer->GetHasPickedUpAnObject() == false)
-					{
-						Objects->PickUpPlayer(m_ptrPlayer->GetAttackBox(), m_ptrPlayer);
-						m_ptrPlayer->HasPickedUpObject(Objects->GetIsPickedUp(), Objects);
-						m_PlayerLightAttacked = false;
-						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleHit);
-					}
-				}
-			}
-		}
-
-		if (m_ptrPlayer->GetHealth() > 0 && Objects->GetDoDamage() && (Objects->GetFallYPosition() >= m_ptrPlayer->GetPosition().y - yPosition && Objects->GetFallYPosition() <= m_ptrPlayer->GetPosition().y + yPosition)
-			 && Objects->GetEnemy() != nullptr)
-		{
-			const Point2f DAMAGE_POSITION_PLAYER{ Point2f{ m_ptrPlayer->GetPosition().x + m_PLAYER_WIDTH / 4.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 3.f * 2.f} };
-			m_ptrPlayer->CheckHit(Objects->GetHitbox(), Objects->GetIsLeft(), 6);
-			if (m_ptrPlayer->GetIsDamaged())
-			{
-				Objects->ObjectHit(true);
-				m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
-			}
-			else if (m_ptrPlayer->GetIsHitWhileBlocking()) Objects->ObjectHit(true);
-		}
-
-		for (EnemyMike* Enemies : m_ptrEnemies)
-		{
-			if(Objects->GetIsPickedUp() && Objects->GetEnemy() == Enemies)
-			{
-				float xPosition{ 10.f };
-				float yPosition{ m_ENEMY_HEIGHT / 3.f * 2.f };
-				Objects->Update(elapsedSec, Point2f{ Enemies->GetPosition().x - xPosition , Enemies->GetPosition().y + yPosition }, Enemies->GetIsLeft(), m_TranformedBordersSvg);
-
-				if (Enemies->GetIsDamaged())
-				{
-					Objects->DroppedObject(Enemies->GetPosition().y);
-				}
-
-				if (Enemies->GetThrowObject()) Objects->ThrownObject(Enemies->GetPosition().y);
-
-				if (Objects->GetIsFlipped() != Enemies->GetFlipBox()) Objects->SetIsFlipped(Enemies->GetFlipBox());
-
-				if (Objects->GetRumble() != Enemies->GetObjectRumble()) Objects->SetRumble(Enemies->GetObjectRumble());
-			}
-			else if(Objects->GetIsPickedUp() == false && Objects->GetPlayer() == nullptr)
-			{
-				if (Enemies->CheckIfAttackBoxIsOn())
-				{
-					const float ENEMY_OBJECTS_Y_DISTANCE{ 30.f };
-
-					if (Enemies->GetIsPickingUp() && (Enemies->GetPosition().y >= Objects->GetPosition().y - ENEMY_OBJECTS_Y_DISTANCE && Enemies->GetPosition().y <= Objects->GetPosition().y + ENEMY_OBJECTS_Y_DISTANCE))
-					{
-						Objects->PickUpEnemy(Enemies->GetAttackBox(), Enemies);
-						Enemies->HasPickedUpObject(Objects->GetIsPickedUp(), Objects);
-					}
-				}
-			}
+			Buttons->Update(elapsedSec);
 		}
 	}
-
-	//Play No enemies Hit effect
-	if (m_ptrPlayer->CheckIfAttackBoxIsOn() && m_PlayerHasHitAnEnemy == false && m_PlayNoHitEffect)
+	else if(m_SettingsScreen)
 	{
-		if(m_PlayerLightAttacked) m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HitAir);
-		else if(m_PlayerHeavyAttacked) m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::HeavyAttackAir);
-		m_PlayNoHitEffect = false;
-	}
-
-
-	//Enemies Update
-
-	for (int EnemyIndex{ 0 }; EnemyIndex < m_ptrEnemies.size(); ++EnemyIndex)
-	{
-		EnemyMike* Enemies = m_ptrEnemies[EnemyIndex];
-
-		bool ObjectFound{ false };
-		for (Objects* Objects : m_ptrObjects)
+		for (Button* Buttons : m_ptrSettingsButtons)
 		{
-			if(Objects->GetPosition().x + 250.f > Enemies->GetPosition().x && Objects->GetPosition().x - 250.f < Enemies->GetPosition().x && Objects->GetIsPickedUp() == false)
-			{
-				Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TranformedBordersSvg, Objects->GetPosition(), Objects->GetIsLeft());
-				ObjectFound = true;
-				break;
-			}
-		}
-		if(ObjectFound == false) Enemies->Update(elapsedSec, m_ptrPlayer->GetPosition(), m_TranformedBordersSvg);
-
-		const float PLAYER_VS_ENEMY_Y_DISTANCE{ 30.f };
-		const Point2f DAMAGE_POSITION{ Point2f{ Enemies->GetPosition().x + m_ENEMY_WIDTH / 4.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT } };
-		const Point2f HITEFFECT_POSITION{ Point2f{ m_ptrPlayer->GetAttackBox()[0].x - m_HITEFFECT_SIZE/2.f, m_ptrPlayer->GetAttackBox()[0].y - m_HITEFFECT_SIZE / 2.f}};
-
-		//See if player is on the same Y position to hit enemies
-		if (m_ptrPlayer->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
-		{
-			if (m_PlayerLightAttacked)
-			{
-				if (m_PlayerUppercutAttack)
-				{
-					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 6, false, false, true);
-					if (Enemies->GetIsHit())
-					{
-						if(m_PlayerHasHitAnEnemy == false)
-						{
-							m_ptrPlayer->LightAttackCounterIncrement(true);
-							m_PlayerHasHitAnEnemy = true;
-						}
-						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 6));
-						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
-					}
-					else if (Enemies->GetIsBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE, true));
-				}
-				else
-				{
-					if (m_ptrPlayer->GetHasPickedUpAnObject()) Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 7);
-					else Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 2);
-
-					if (Enemies->GetIsHit())
-					{
-						if (m_ptrPlayer->GetHasPickedUpAnObject())
-						{
-							m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 7));
-							m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
-						}
-						else
-						{
-							if (m_PlayerHasHitAnEnemy == false)
-							{
-								m_ptrPlayer->LightAttackCounterIncrement(true);
-								m_PlayerHasHitAnEnemy = true;
-							}
-							m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 2));
-							m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
-						}
-					}
-					else if (Enemies->GetIsBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE, true));
-				}
-
-			}
-			else if (m_PlayerHeavyAttacked)
-			{
-				if (m_ptrPlayer->GetHeavyAttackCounter() == 1 || Enemies->GetIsStunned())
-				{
-					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 5, false, true);
-					if (Enemies->GetIsHit())
-					{
-						if (m_PlayerHasHitAnEnemy == false)
-						{
-							m_ptrPlayer->HeavyAttackCounterIncrement(true);
-							m_PlayerHasHitAnEnemy = true;
-						}
-						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 5));
-						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
-					}
-					else if (Enemies->GetIsBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE, true));
-				}
-				else
-				{
-					Enemies->CheckHit(m_ptrPlayer->GetAttackBox(), 4);
-					if (Enemies->GetIsHit())
-					{
-						if (m_PlayerHasHitAnEnemy == false)
-						{
-							m_ptrPlayer->HeavyAttackCounterIncrement(true);
-							m_PlayerHasHitAnEnemy = true;
-						}
-						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 4));
-						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE));
-					}
-					else if (Enemies->GetIsBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION, m_HITEFFECT_SIZE, true));
-				}
-			}
-
-			if (Enemies->GetHealth() <= 0 && Enemies->GetIsHit() && (m_PlayerLightAttacked || m_PlayerHeavyAttacked))
-			{
-				Point2f DAMAGE_POSITION_KAPOW;
-				if (Enemies->GetIsLeft()) DAMAGE_POSITION_KAPOW = Point2f{ Enemies->GetPosition().x - m_ENEMY_WIDTH / 5.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT / 2.f };
-				else DAMAGE_POSITION_KAPOW = Point2f{ Enemies->GetPosition().x + m_ENEMY_WIDTH / 5.f, Enemies->GetPosition().y + m_ENEMY_HEIGHT / 2.f };
-				
-				m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_KAPOW, m_DAMAGE_SIZE, 0, true));
-			}
-
-
-			if (Enemies == m_ptrEnemies.back())
-			{
-				if (m_PlayerHasHitAnEnemy) m_PlayerHasHitAnEnemy = false;
-				m_PlayerLightAttacked = false;
-				m_PlayerUppercutAttack = false;
-				m_PlayerHeavyAttacked = false;
-			}
-
-		}
-
-		if (Enemies->CheckIfAttackBoxIsOn() && (m_ptrPlayer->GetPosition().y >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && m_ptrPlayer->GetPosition().y <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE))
-		{
-			//std::cout << "Enemy is Hitting" << std::endl;
-			const Point2f DAMAGE_POSITION_PLAYER{ Point2f{ m_ptrPlayer->GetPosition().x + m_PLAYER_WIDTH / 4.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 3.f * 2.f}};
-			const Point2f HITEFFECT_POSITION_PLAYER{ Point2f{ Enemies->GetAttackBox()[3].x - m_HITEFFECT_SIZE / 2.f, Enemies->GetAttackBox()[3].y - m_HITEFFECT_SIZE / 2.f} };
-
-			if(Enemies->GetHasPickedUp())
-			{
-				if(Enemies->m_EnemyStatus == EnemyMike::Status::PickUpAttack)
-				{
-					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 7);
-					if (m_ptrPlayer->GetIsDamaged())
-					{
-						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 7));
-						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE));
-						m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleHit);
-					}
-					else if(m_ptrPlayer->GetIsHitWhileBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE, true));
-				}
-			}
-			else
-			{
-				if (Enemies->m_EnemyStatus == EnemyMike::Status::LightAttack)
-				{
-					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 2);
-					if (m_ptrPlayer->GetIsDamaged())
-					{
-						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 2));
-						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE));
-					}
-					else if (m_ptrPlayer->GetIsHitWhileBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE, true));
-				}
-				else if (Enemies->m_EnemyStatus == EnemyMike::Status::SpinKick)
-				{
-					m_ptrPlayer->CheckHit(std::vector<Point2f>(Enemies->GetAttackBox()), Enemies->GetIsLeft(), 6, false, true);
-					if (m_ptrPlayer->GetIsDamaged())
-					{
-						m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION_PLAYER, m_DAMAGE_SIZE, 6));
-						m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE));
-					}
-					else if (m_ptrPlayer->GetIsHitWhileBlocking()) m_ptrHitEffects.push_back(new HitEffects(HITEFFECT_POSITION_PLAYER, m_HITEFFECT_SIZE, true));
-				}
-			}
-		}
-
-		if (Enemies->CheckIdle())
-		{
-			if(Enemies->GetIsPickingUp() == false)
-			{
-				if (m_ptrPlayer->GetPosition().x > Enemies->GetPosition().x) Enemies->SetIsLeft(false);
-				else Enemies->SetIsLeft(true);
-			}
-			if(Enemies->GetHasPickedUp()) Enemies->m_EnemyStatus = EnemyMike::Status::PickUpIdle;
-			else Enemies->m_EnemyStatus = EnemyMike::Status::Idle;
-		}
-
-		for (Objects* Objects : m_ptrObjects)
-		{
-			if (Enemies->GetHealth() > 0 && Objects->GetDoDamage() && (Objects->GetFallYPosition() >= Enemies->GetPosition().y - PLAYER_VS_ENEMY_Y_DISTANCE && Objects->GetFallYPosition() <= Enemies->GetPosition().y + PLAYER_VS_ENEMY_Y_DISTANCE)
-				&& Objects->GetEnemy() != Enemies)
-			{
-				Enemies->CheckHit(Objects->GetHitbox(), 6, false, false, false, true);
-				if (Enemies->GetIsHit())
-				{
-					Objects->ObjectHit(true);
-					m_ptrDamageNumbers.push_back(new DamageNumbers(DAMAGE_POSITION, m_DAMAGE_SIZE, 6));
-					m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::RecycleHit);
-				}
-				else if (Enemies->GetIsBlocking()) Objects->ObjectHit(true);
-			}
-		}
-
-		if (Enemies->GetSpawnCoins())
-		{
-			m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::CoinSpawn);
-
-			if(Enemies->GetEnemyType() == "Richard")
-			{
-				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Dollar1));
-				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
-				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
-			}
-			else if(Enemies->GetEnemyType() == "Lee" || Enemies->GetEnemyType() == "Luke")
-			{
-				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
-				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
-			}
-			else
-			{
-				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents5));
-				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents10));
-				m_ptrCoins.push_back(new Coins(Enemies->GetPosition(), m_COINS_SIZE, Coins::Type::Cents25));
-			}
-
-			delete Enemies;
-			m_ptrEnemies.erase(m_ptrEnemies.begin() + EnemyIndex);
-
-			--EnemyIndex;
+			Buttons->Update(elapsedSec);
 		}
 	}
-
-	// Coins Update
-
-	for (Coins* Money : m_ptrCoins)
+	else if (m_ptrPauseScreen)
 	{
-		Money->Update(elapsedSec);
-	}
-
-	for (int CoinIndex{ 0 }; CoinIndex < m_ptrCoins.size(); ++CoinIndex)
-	{
-		Coins* Money = m_ptrCoins[CoinIndex];
-
-		utils::HitInfo m_Hitinfo;
-
-		if (utils::Raycast(m_ptrPlayer->GetHitbox(), Money->GetHitbox()[0], Money->GetHitbox()[1], m_Hitinfo))
+		for (Button* Buttons : m_ptrPauseButtons)
 		{
-			m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::CoinPickUp);
-
-			if (Money->m_CoinType == Coins::Type::Dollar1 || Money->m_CoinType == Coins::Type::Dollars2)
-			{
-				m_AboveDecimalPoint += Money->GetValue();
-			}
-			else
-			{
-				m_BelowDecimalPoint += Money->GetValue();
-
-				if (m_BelowDecimalPoint > 100)
-				{
-					m_BelowDecimalPoint -= 100;
-					++m_AboveDecimalPoint;
-				}
-			}
-
-			m_DoShowWallet = true;
-			m_ShowWalletCounter = 0.f;
-
-			delete Money;
-			m_ptrCoins.erase(m_ptrCoins.begin() + CoinIndex);
-
-			--CoinIndex;
-
-		}
-
-	}
-
-	// PlayerUI Update
-	if (m_DoShowWallet)
-	{
-		m_ShowWalletCounter += elapsedSec;
-		ShowWallet();
-		m_ptrPlayerUI->Update(elapsedSec, Point2f{ m_ptrPlayer->GetPosition().x - 50.f, m_ptrPlayer->GetPosition().y + m_PLAYER_HEIGHT / 4.f * 3.f }, m_AboveDecimalPoint, m_BelowDecimalPoint);
-	}
-	m_ptrPlayerUI->SetPlayerHealth(m_ptrPlayer->GetHealth());
-
-	// DamageNumbers Update
-	for (DamageNumbers* Damage : m_ptrDamageNumbers)
-	{
-		Damage->Update(elapsedSec);
-	}
-
-	for(int DamageIndex{}; DamageIndex < m_ptrDamageNumbers.size(); ++DamageIndex)
-	{
-		DamageNumbers* Damage = m_ptrDamageNumbers[DamageIndex];
-		if(Damage->GetIsDone())
-		{
-			delete Damage;
-			m_ptrDamageNumbers.erase(m_ptrDamageNumbers.begin() + DamageIndex);
-
-			--DamageIndex;
+			Buttons->Update(elapsedSec);
 		}
 	}
-
-	//HitEffects Update
-	for (HitEffects* Effects : m_ptrHitEffects)
-	{
-		Effects->Update(elapsedSec);
-	}
-
-	for(int HitEffectsIndex{}; HitEffectsIndex < m_ptrHitEffects.size(); ++HitEffectsIndex)
-	{
-		HitEffects* HitEffect = m_ptrHitEffects[HitEffectsIndex];
-
-		if (HitEffect->GetIsDone())
-		{
-			delete HitEffect;
-			m_ptrHitEffects.erase(m_ptrHitEffects.begin() + HitEffectsIndex);
-
-			--HitEffectsIndex;
-		}
-	}
-
-	//Fight Area
-	FightingAreaEvent();
-
-	//Camera Update
-	m_ptrCamera->Update(elapsedSec);
 
 	//Sound
-	if(m_BackgroundMusicOn == false)
+	if(m_BackgroundMusicIsPlaying == false)
 	{
-		m_ptrLevel1Music->SetVolume(m_BackgroundVolume);
-		//m_ptrLevel1Music->Play(true);
-		m_BackgroundMusicOn = true;
+		if (m_Playing)
+		{
+			if (m_ptrMenuMusic->IsPlaying()) m_ptrMenuMusic->Stop();
+			m_ptrLevel1Music->SetVolume(m_BackgroundVolume);
+			m_ptrLevel1Music->Play(true);
+			m_ptrSoundEffects->SetVolume(m_SFXVolume);
+		}
+		else if (m_MenuScreen)
+		{
+			if (m_ptrLevel1Music->IsPlaying()) m_ptrLevel1Music->Stop();
+			m_ptrMenuMusic->SetVolume(m_BackgroundVolume);
+			m_ptrMenuMusic->Play(true);
+			m_ptrSoundEffects->SetVolume(m_SFXVolume);
+		}
+		else if(m_PauseScreen)
+		{
+			if (m_ptrLevel1Music->IsPlaying()) m_ptrLevel1Music->Stop();
+			m_ptrPauseMusic->SetVolume(m_BackgroundVolume);
+			m_ptrPauseMusic->Play(true);
+			m_ptrSoundEffects->SetVolume(m_SFXVolume);
+		}
+		m_BackgroundMusicIsPlaying = true;
 	}
 
-	//Snow
-	m_ptrSnowEffect->Update(elapsedSec);
 }
 
 void Game::Draw( ) const
 {
 	ClearBackground( );
 
-	Rectf dstRectfMap{ 0.f, 0.f, m_ptrMap->GetWidth() * 3.3f, GetViewPort().height * 1.3f };
-	Rectf srcRectMap{ 10.f, -63.f, m_ptrMap->GetWidth(), 280.f };
+	//Draw Level
+	if (m_Playing || m_PauseScreen) m_ptrLevelManager->Draw();
 
-
-
-	//Camera
-	if(m_StopCamera)  m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, Point2f{ m_StopCameraXPosition , m_ptrPlayer->GetPosition().y });
-	else m_ptrCamera->Aim(dstRectfMap.width, dstRectfMap.height, Point2f{ m_ptrPlayer->GetPosition().x + m_ptrPlayer->GetWidth() / 2.f , m_ptrPlayer->GetPosition().y });
-
-	//Draw Map
-	m_ptrMap->Draw(dstRectfMap, srcRectMap);
-	utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
-	utils::DrawPolygon(m_TransformedMapSvg);
-	utils::DrawPolygon(m_TransformedCameraSvg);
-
-
-	//Coins 
-	for (Coins* Money : m_ptrCoins)
+	//Draw Menu
+	if (m_MenuScreen)
 	{
-		Money->Draw();
-	}
+		m_ptrMenuScreen->Draw();
 
-	//Objects
-	for (Objects* Objects : m_ptrObjects)
+		for (Button* Buttons : m_ptrMenuButtons)
+		{
+			Buttons->Draw();
+		}
+
+		m_ptrMenuScott->Draw(Rectf{ 0.f, 0.f, m_ptrMenuScott->GetWidth() * 3.1f, m_ptrMenuScott->GetHeight() * 3.1f });
+	}
+	else if(m_SettingsScreen)
 	{
-		if(Objects->GetIsPickedUp() == false) Objects->Draw();
+		m_ptrSettingsScreen->Draw();
+
+		for (Button* Buttons : m_ptrSettingsButtons)
+		{
+			Buttons->Draw();
+		}
+
+		m_ptrBackgroundVolume->Draw();
+		m_ptrSFXVolume->Draw();
+
+		m_ptrSettingsText->Draw();
 	}
-
-	//Draw Player and Enemies depending on Y-axis
-	SortDraw();
-
-	//Draw PlayerUI
-	if (m_DoShowWallet)
+	else if(m_PauseScreen)
 	{
-		m_ptrPlayerUI->Draw();
+		m_ptrPauseScreen->Draw();
+
+		for (Button* Buttons : m_ptrPauseButtons)
+		{
+			Buttons->Draw();
+		}
 	}
-
-	//Draw HitEffects
-	for (HitEffects* Effects : m_ptrHitEffects)
-	{
-		Effects->Draw();
-	}
-
-	//Draw Damage
-	for (DamageNumbers* Damage : m_ptrDamageNumbers)
-	{
-		Damage->Draw();
-	}
-
-	//Camera
-	m_ptrCamera->Reset();
-
-	//Draw Snow
-	m_ptrSnowEffect->Draw();
-	
-	//Draw PlayerUI
-	m_ptrPlayerUI->DrawUI();
 }
 
 void Game::ProcessKeyDownEvent(const SDL_KeyboardEvent& e)
 {
-
-	// Attack Moves and Jump
-	if(e.keysym.sym == SDLK_j && m_PlayerResetLightAttackButton)
+	//Level
+	if (m_Playing)
 	{
-		if ( m_ptrPlayer->CheckIdle())
+		m_ptrLevelManager->ProcessKeyDownEvent(e);
+
+		if (e.keysym.sym == SDLK_ESCAPE)
 		{
-			for (EnemyMike* Enemies : m_ptrEnemies)
+			m_PauseScreen = true;
+			m_Playing = false;
+			m_ButtonType = ButtonType::Resume;
+			m_ptrPauseButtons[0]->SetIsActivated(true);
+			m_BackgroundMusicIsPlaying = false;
+		}
+	}
+
+	//Menu
+	if (m_MenuScreen)
+	{
+		if (e.keysym.sym == SDLK_s && m_DownReset)
+		{
+			m_DownReset = false;
+			switch (m_ButtonType)
 			{
-				if ((Enemies->GetHealth() <= 2 || Enemies->GetIsStunned()/* || Enemies->GetGotLightHitAmount() == 4*/) && m_ptrPlayer->GetIsJumping() == false && m_PlayerUppercutAttack == false && m_ptrPlayer->GetHasPickedUpAnObject() == false)
-				{
-					Enemies->CheckHit(std::vector<Point2f>(m_ptrPlayer->GetAttackBox()), 0, true);
-					if (Enemies->GetIsColliding())
-					{
-						m_ptrPlayer->Attack(false, false, false, true);
-						m_PlayerUppercutAttack = true;
-					}
-				}
+			case Game::ButtonType::Play:
+				m_ButtonType = ButtonType::Settings;
+				m_ptrMenuButtons[int(ButtonType::Settings)]->SetIsActivated(true);
+				m_ptrMenuButtons[int(ButtonType::Play)]->SetIsActivated(false);
+				break;
+			case Game::ButtonType::Settings:
+				m_ButtonType = ButtonType::Play;
+				m_ptrMenuButtons[int(ButtonType::Play)]->SetIsActivated(true);
+				m_ptrMenuButtons[int(ButtonType::Settings)]->SetIsActivated(false);
+				break;
 			}
-			if(m_PlayerUppercutAttack == false) m_ptrPlayer->Attack(true);
-			m_PlayerLightAttacked = true;
-			m_PlayerResetLightAttackButton = false;
-			m_PlayNoHitEffect = true;
 		}
-		else if (m_ptrPlayer->GetIsJumping())
+		else if ((e.keysym.sym == SDLK_z || e.keysym.sym == SDLK_w ) && m_UpReset)
 		{
-			m_ptrPlayer->Attack(false, false, true);
-			m_PlayerLightAttacked = true;
+			m_UpReset = false;
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Play:
+				m_ButtonType = ButtonType::Settings;
+				m_ptrMenuButtons[int(ButtonType::Settings)]->SetIsActivated(true);
+				m_ptrMenuButtons[int(ButtonType::Play)]->SetIsActivated(false);
+				break;
+			case Game::ButtonType::Settings:
+				m_ButtonType = ButtonType::Play;
+				m_ptrMenuButtons[int(ButtonType::Play)]->SetIsActivated(true);
+				m_ptrMenuButtons[int(ButtonType::Settings)]->SetIsActivated(false);
+				break;
+			}
 		}
-
-	}
-	else if(e.keysym.sym == SDLK_k && m_PlayerResetHeavyAttackButton)
-	{
-		if( m_ptrPlayer->CheckIdle())
+		else if ((e.keysym.sym == SDLK_SPACE || e.keysym.sym == SDLK_RETURN) && m_SpacebarReset)
 		{
-			m_ptrPlayer->Attack(false, true);
-			m_PlayerHeavyAttacked = true;
-			m_PlayerResetHeavyAttackButton = false;
-			m_PlayNoHitEffect = true;
-		}
-	}
-	else if (e.keysym.sym == SDLK_l && (m_ptrPlayer->CheckIdle() || m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::Block))
-	{
-		m_ptrPlayer->Block();
-	}
-
-	if (e.keysym.sym == SDLK_SPACE && m_ptrPlayer->CheckIdle())
-	{
-		if (m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::MovingLeft || m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::MovingRight) m_ptrPlayer->Jump(true);
-		else if (m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::RunningLeft || m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::RunningRight) m_ptrPlayer->Jump(true, true);
-		else m_ptrPlayer->Jump();
-	}
-
-	if((e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT || e.keysym.sym == SDLK_RIGHT) && m_PlayerResetRunRight && m_PlayerResetRunLeft)
-	{
-		if (m_ptrPlayer->GetIsRunningTrigger() == true && m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::Idle)
-		{
-			if (e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_RIGHT) m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::RunningRight;
-			else if (e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT)m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::RunningLeft;
-		}
-		else
-		{
-			if (e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_RIGHT) m_PlayerResetRunRight = false;
-			else if (e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT) m_PlayerResetRunLeft = false;
-			
-			m_ptrPlayer->SetIsRunningTrigger(true);
-			//std::cout << "Running trigger is true" << std::endl;
+			m_SpacebarReset = false;
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Play:
+				m_MenuScreen = false;
+				m_Playing = true;
+				m_BackgroundMusicIsPlaying = false;
+				break;
+			case Game::ButtonType::Settings:
+				m_ButtonType = ButtonType::Music;
+				m_MenuScreen = false;
+				m_SettingsScreen = true;
+				m_ptrSettingsButtons[int(ButtonType::Music) - 2]->SetIsActivated(true);
+				m_ptrBackgroundVolume->SetIsActivated(true);
+				m_MenuToSettings = true;
+				break;
+			}
 		}
 	}
 
-	if(e.keysym.sym == SDLK_p)
+	//Settings
+	if (m_SettingsScreen)
 	{
-		std::cout << "XPosition: " << m_ptrPlayer->GetPosition().x << std::endl;
+		if (e.keysym.sym == SDLK_s && m_DownReset)
+		{
+			m_DownReset = false;
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Music:
+				m_ButtonType = ButtonType::SFX;
+				m_ptrSettingsButtons[int(ButtonType::SFX) - 2]->SetIsActivated(true);
+				m_ptrSettingsButtons[int(ButtonType::Music) - 2]->SetIsActivated(false);
+				m_ptrBackgroundVolume->SetIsActivated(false);
+				m_ptrSFXVolume->SetIsActivated(true);
+				break;
+			case Game::ButtonType::SFX:
+				m_ButtonType = ButtonType::Exit;
+				m_ptrSettingsButtons[int(ButtonType::Exit) - 2]->SetIsActivated(true);
+				m_ptrSettingsButtons[int(ButtonType::SFX) - 2]->SetIsActivated(false);
+				m_ptrSFXVolume->SetIsActivated(false);
+				break;
+			case Game::ButtonType::Exit:
+				m_ButtonType = ButtonType::Music;
+				m_ptrSettingsButtons[int(ButtonType::Music) - 2]->SetIsActivated(true);
+				m_ptrSettingsButtons[int(ButtonType::Exit) - 2]->SetIsActivated(false);
+				m_ptrBackgroundVolume->SetIsActivated(true);
+				break;
+			}
+		}
+		else if ((e.keysym.sym == SDLK_z || e.keysym.sym == SDLK_w) && m_UpReset)
+		{
+			m_UpReset = false;
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Music:
+				m_ButtonType = ButtonType::Exit;
+				m_ptrSettingsButtons[int(ButtonType::Exit) - 2]->SetIsActivated(true);
+				m_ptrSettingsButtons[int(ButtonType::Music) - 2]->SetIsActivated(false);
+				m_ptrBackgroundVolume->SetIsActivated(false);
+				break;
+			case Game::ButtonType::SFX:
+				m_ButtonType = ButtonType::Music;
+				m_ptrSettingsButtons[int(ButtonType::Music) - 2]->SetIsActivated(true);
+				m_ptrSettingsButtons[int(ButtonType::SFX) - 2]->SetIsActivated(false);
+				m_ptrBackgroundVolume->SetIsActivated(true);
+				m_ptrSFXVolume->SetIsActivated(false);
+				break;
+			case Game::ButtonType::Exit:
+				m_ButtonType = ButtonType::SFX;
+				m_ptrSettingsButtons[int(ButtonType::SFX) - 2]->SetIsActivated(true);
+				m_ptrSettingsButtons[int(ButtonType::Exit) - 2]->SetIsActivated(false);
+				m_ptrSFXVolume->SetIsActivated(true);
+				break;
+			}
+		}
+		else if ((e.keysym.sym == SDLK_SPACE || e.keysym.sym == SDLK_RETURN) && m_SpacebarReset)
+		{
+			m_SpacebarReset = false;
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Music:
+				if(m_BackgroundVolume < 100) m_BackgroundVolume += 10;
+				m_ptrMenuMusic->SetVolume(m_BackgroundVolume);
+				m_ptrLevel1Music->SetVolume(m_BackgroundVolume);
+				m_ptrBackgroundVolume->Update(m_BackgroundVolume);
+				break;
+			case Game::ButtonType::SFX:
+				if (m_SFXVolume < 100) m_SFXVolume += 10;
+				m_ptrSoundEffects->SetVolume(m_SFXVolume);
+				m_ptrSFXVolume->Update(m_SFXVolume);
+				m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::CoinPickUp);
+				break;
+			case Game::ButtonType::Exit:
+				if(m_MenuToSettings)
+				{
+					m_ButtonType = ButtonType::Settings;
+					m_MenuScreen = true;
+					m_MenuToSettings = false;
+				}
+				else
+				{
+					m_ButtonType = ButtonType::Settings;
+					m_PauseScreen = true;
+				}
+				m_SettingsScreen = false;
+				m_ptrSettingsButtons[int(ButtonType::Exit) - 2]->SetIsActivated(false);
+				break;
+			}
+		}
+		else if (e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_a)
+		{
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Music:
+				if (m_BackgroundVolume > 0) m_BackgroundVolume -= 10;
+				m_ptrMenuMusic->SetVolume(m_BackgroundVolume);
+				m_ptrLevel1Music->SetVolume(m_BackgroundVolume);
+				m_ptrBackgroundVolume->Update(m_BackgroundVolume);
+				break;
+			case Game::ButtonType::SFX:
+				if (m_SFXVolume > 0) m_SFXVolume -= 10;
+				m_ptrSoundEffects->SetVolume(m_SFXVolume);
+				m_ptrSFXVolume->Update(m_SFXVolume);
+				m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::CoinPickUp);
+				break;
+			}
+		}
+		else if (e.keysym.sym == SDLK_d)
+		{
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Music:
+				if (m_BackgroundVolume < 100) m_BackgroundVolume += 10;
+				m_ptrMenuMusic->SetVolume(m_BackgroundVolume);
+				m_ptrLevel1Music->SetVolume(m_BackgroundVolume);
+				m_ptrBackgroundVolume->Update(m_BackgroundVolume);
+				break;
+			case Game::ButtonType::SFX:
+				if (m_SFXVolume < 100) m_SFXVolume += 10;
+				m_ptrSoundEffects->SetVolume(m_SFXVolume);
+				m_ptrSFXVolume->Update(m_SFXVolume);
+				m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::CoinPickUp);
+				break;
+			}
+		}
+	}
+
+	//PauseScreen
+	if(m_PauseScreen)
+	{
+		if (e.keysym.sym == SDLK_s && m_DownReset)
+		{
+			m_DownReset = false;
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Resume:
+				m_ButtonType = ButtonType::Settings;
+				m_ptrPauseButtons[1]->SetIsActivated(true);
+				m_ptrPauseButtons[0]->SetIsActivated(false);
+				break;
+			case Game::ButtonType::Settings:
+				m_ButtonType = ButtonType::Menu;
+				m_ptrPauseButtons[2]->SetIsActivated(true);
+				m_ptrPauseButtons[1]->SetIsActivated(false);
+				break;
+			case Game::ButtonType::Menu:
+				m_ButtonType = ButtonType::Resume;
+				m_ptrPauseButtons[0]->SetIsActivated(true);
+				m_ptrPauseButtons[2]->SetIsActivated(false);
+				break;
+			}
+		}
+		else if ((e.keysym.sym == SDLK_z || e.keysym.sym == SDLK_w) && m_UpReset)
+		{
+			m_UpReset = false;
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Resume:
+				m_ButtonType = ButtonType::Menu;
+				m_ptrPauseButtons[2]->SetIsActivated(true);
+				m_ptrPauseButtons[0]->SetIsActivated(false);
+				break;
+			case Game::ButtonType::Settings:
+				m_ButtonType = ButtonType::Resume;
+				m_ptrPauseButtons[0]->SetIsActivated(true);
+				m_ptrPauseButtons[1]->SetIsActivated(false);
+				break;
+			case Game::ButtonType::Menu:
+				m_ButtonType = ButtonType::Settings;
+				m_ptrPauseButtons[1]->SetIsActivated(true);
+				m_ptrPauseButtons[2]->SetIsActivated(false);
+				break;
+			}
+		}
+		else if ((e.keysym.sym == SDLK_SPACE || e.keysym.sym == SDLK_RETURN) && m_SpacebarReset)
+		{
+			m_SpacebarReset = false;
+			switch (m_ButtonType)
+			{
+			case Game::ButtonType::Resume:
+				m_PauseScreen = false;
+				m_Playing = true;
+				m_BackgroundMusicIsPlaying = false;
+				break;
+			case Game::ButtonType::Settings:
+				m_ButtonType = ButtonType::Music;
+				m_PauseScreen = false;
+				m_SettingsScreen = true;
+				m_ptrSettingsButtons[int(ButtonType::Music) - 2]->SetIsActivated(true);
+				m_ptrBackgroundVolume->SetIsActivated(true);
+				break;
+			case Game::ButtonType::Menu:
+				m_ButtonType = ButtonType::Play;
+				m_ptrPauseButtons[2]->SetIsActivated(false);
+				m_PauseScreen = false;
+				m_MenuScreen = true;
+				m_BackgroundMusicIsPlaying = false;
+				m_ptrLevelManager->ResetLevel();
+				break;
+			}
+		}
 	}
 }
 
 
 void Game::ProcessKeyUpEvent( const SDL_KeyboardEvent& e )
 {
-	//Reset Keys
-	if (e.keysym.sym == SDLK_j) m_PlayerResetLightAttackButton = true;
+	//Level
+	if (m_Playing) m_ptrLevelManager->ProcessKeyUpEvent(e);
 
-	if (e.keysym.sym == SDLK_k) m_PlayerResetHeavyAttackButton = true;
-
-	if (e.keysym.sym == SDLK_d || e.keysym.sym == SDLK_RIGHT) m_PlayerResetRunRight = true;
-
-	if (e.keysym.sym == SDLK_q || e.keysym.sym == SDLK_LEFT) m_PlayerResetRunLeft = true;
-
-	if (e.keysym.sym == SDLK_l && (m_ptrPlayer->CheckIdle() || m_ptrPlayer->m_ScottStatus == ScottPilgrim::Status::Block)) m_ptrPlayer->Block(true);
-
+	//Menu Buttons
+	if (m_UpReset == false) m_UpReset = true;
+	if (m_DownReset == false) m_DownReset = true;
+	if (m_SpacebarReset == false) m_SpacebarReset = true;
 }
 
 void Game::ProcessMouseMotionEvent( const SDL_MouseMotionEvent& e )
@@ -753,195 +544,4 @@ void Game::ClearBackground( ) const
 {
 	glClearColor( 0.0f, 0.0f, 0.3f, 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT );
-}
-
-void Game::PlayerKeys(float elapsedSec)
-{
-	 /*Check keyboard state*/
-	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
-
-	if (pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_W])
-	{
-		m_ptrPlayer->CheckKeys(elapsedSec, true, false, true);
-		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, true, false, true);
-	}
-	else if (pStates[SDL_SCANCODE_D] && pStates[SDL_SCANCODE_S])
-	{
-		m_ptrPlayer->CheckKeys(elapsedSec, true, false, false, true);
-		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, true, false, false, true);
-	}
-	else if (pStates[SDL_SCANCODE_A] && pStates[SDL_SCANCODE_W])
-	{
-		m_ptrPlayer->CheckKeys(elapsedSec, false, true, true);
-		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, true, true);
-	}
-	else if (pStates[SDL_SCANCODE_A] && pStates[SDL_SCANCODE_S])
-	{
-		m_ptrPlayer->CheckKeys(elapsedSec, false, true, false, true);
-		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, true, false, true);
-	}
-	else if (pStates[SDL_SCANCODE_D])
-	{
-		m_ptrPlayer->CheckKeys(elapsedSec, true, false);
-		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, true, false);
-	}
-	else if (pStates[SDL_SCANCODE_A])
-	{
-		m_ptrPlayer->CheckKeys(elapsedSec, false, true);
-		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, true);
-	}
-	else if (pStates[SDL_SCANCODE_S])
-	{
-		m_ptrPlayer->CheckKeys(elapsedSec, false, false, false, true);
-		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, false, false, true);
-	}
-	else if (pStates[SDL_SCANCODE_W])
-	{
-		m_ptrPlayer->CheckKeys(elapsedSec, false, false, true);
-		if (m_ptrCamera->GetIsMoving() && m_StopCamera == false) m_ptrSnowEffect->CheckKeys(elapsedSec, false, false, true);
-	}
-	else if (m_ptrPlayer->CheckIdle())
-	{
-		m_ptrPlayer->m_ScottStatus = ScottPilgrim::Status::Idle;
-	}
-}
-
-void Game::SortDraw() const
-{
-	int AmountOfEnemiesAbovePlayerYPosition{};
-	std::vector<EnemyMike*> m_ptrEnemiesAbovePlayer{};
-
-	int AmountOfEnemiesBelowPlayerYPosition{};
-	std::vector<EnemyMike*> m_ptrEnemiesBelowPlayer{};
-
-	for (EnemyMike* Enemies : m_ptrEnemies)
-	{
-		if (Enemies->GetPosition().y >= m_ptrPlayer->GetPosition().y)
-		{
-			m_ptrEnemiesAbovePlayer.push_back(Enemies);
-			++AmountOfEnemiesAbovePlayerYPosition;
-		}
-		if (Enemies->GetPosition().y < m_ptrPlayer->GetPosition().y)
-		{
-			m_ptrEnemiesBelowPlayer.push_back(Enemies);
-			++AmountOfEnemiesBelowPlayerYPosition;
-		}
-	}
-
-	SortYPosition(AmountOfEnemiesAbovePlayerYPosition, m_ptrEnemiesAbovePlayer);
-
-	if(m_ptrPlayer->GetHoldingObject() != nullptr)
-	{
-		m_ptrPlayer->GetHoldingObject()->Draw();
-	}
-	m_ptrPlayer->Draw();
-
-	SortYPosition(AmountOfEnemiesBelowPlayerYPosition, m_ptrEnemiesBelowPlayer);
-}
-
-void Game::SortYPosition(int Amount, const std::vector<EnemyMike*>& ptrEnemies) const
-{
-	if (Amount == 3)
-	{
-		int AmountOfEnemiesAbove{};
-		std::vector<EnemyMike*> m_ptrEnemiesAbove{};
-		int AmountOfEnemiesBelow{};
-		std::vector<EnemyMike*> m_ptrEnemiesBelow{};
-
-		for(int EnemiesIndex{1}; EnemiesIndex < 3; ++EnemiesIndex)
-		{
-			if (ptrEnemies[EnemiesIndex]->GetPosition().y >= ptrEnemies[0]->GetPosition().y)
-			{
-				m_ptrEnemiesAbove.push_back(ptrEnemies[EnemiesIndex]);
-				++AmountOfEnemiesAbove;
-			}
-			if (ptrEnemies[EnemiesIndex]->GetPosition().y < ptrEnemies[0]->GetPosition().y)
-			{
-				m_ptrEnemiesBelow.push_back(ptrEnemies[EnemiesIndex]);
-				++AmountOfEnemiesBelow;
-			}
-		}
-
-		SortYPosition(AmountOfEnemiesAbove, m_ptrEnemiesAbove);
-		SortDrawObject(ptrEnemies[0]);
-		SortYPosition(AmountOfEnemiesBelow, m_ptrEnemiesBelow);
-
-	}
-	else if (Amount == 2)
-	{
-		if (ptrEnemies[0]->GetPosition().y > ptrEnemies[1]->GetPosition().y)
-		{
-			SortDrawObject(ptrEnemies[0]);
-			SortDrawObject(ptrEnemies[1]);
-		}
-		else
-		{
-			SortDrawObject(ptrEnemies[1]);
-			SortDrawObject(ptrEnemies[0]);
-		}
-	}
-	else if (Amount == 1) SortDrawObject(ptrEnemies[0]);
-}
-
-void Game::SortDrawObject(const EnemyMike* Enemy) const
-{
-	if(Enemy->GetHoldingObject() != nullptr)
-	{
-		Enemy->GetHoldingObject()->Draw();
-	}
-	Enemy->Draw();
-}
-
-void Game::ShowWallet()
-{
-	if(m_ShowWalletCounter >= m_MAX_SHOW_WALLET_DELAY)
-	{
-		m_DoShowWallet = false;
-		m_ShowWalletCounter -= m_MAX_SHOW_WALLET_DELAY;
-	}
-}
-
-void Game::FightingAreaEvent()
-{
-	if(m_ptrPlayer->GetPosition().x >= m_FightAreasXPosition[0] && m_StopCamera == false)
-	{
-		m_StopCamera = true;
-		float EnemiesSpawnPosition = m_FightAreasXPosition[0] + GetViewPort().width / 3.f * 2.f;
-		if(m_FightEvents == 0)
-		{
-			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-			m_ptrEnemies.push_back(new EnemyLee(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 200.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-		}
-		else if(m_FightEvents == 1)
-		{
-			m_ptrEnemies.push_back(new EnemyLuke(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-			m_ptrEnemies.push_back(new EnemyLee(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 200.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-		}
-		else if(m_FightEvents == 2)
-		{
-			m_ptrEnemies.push_back(new EnemyRichard(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-			m_ptrEnemies.push_back(new EnemyRichard(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f - 100.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-			m_ptrEnemies.push_back(new EnemyMike(Point2f{ EnemiesSpawnPosition, GetViewPort().height / 4.f + 200.f }, m_ENEMY_WIDTH, m_ENEMY_HEIGHT, m_ptrSoundEffects));
-		}
-		++m_FightEvents;
-
-		m_StopCameraXPosition = m_FightAreasXPosition[0] + m_ptrPlayer->GetWidth() / 2.f;
-		m_FightAreasXPosition.erase(m_FightAreasXPosition.begin());
-
-		//Transform Camera Collisions
-		Matrix2x3 TranslationMat{};
-		TranslationMat.SetAsTranslate(Vector2f{ m_StopCameraXPosition - GetViewPort().width / 2.f, 640.f });
-		m_TransformedCameraSvg = TranslationMat.Transform(m_CameraSvg[0]);
-
-		m_TranformedBordersSvg.push_back(m_TransformedCameraSvg);
-	}
-
-	if(m_StopCamera && m_ptrEnemies.empty())
-	{
-		m_StopCamera = false;
-		m_TranformedBordersSvg.pop_back();
-		m_ptrSoundEffects->Play(SoundEffects::SoundEffectType::GoSound);
-	}
 }

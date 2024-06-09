@@ -41,6 +41,7 @@ public:
 	bool GetIsPickingUp() const;
 	bool GetIsHit() const;
 	bool GetIsStunned() const;
+	bool GetIsMoving() const;
 	int GetHealth() const;
 	int GetObjectRumble() const;
 	Point2f GetPosition() const;
@@ -49,6 +50,7 @@ public:
 	std::string GetEnemyType() const;
 
 	void SetIsLeft(bool IsLeft);
+	void SetShowHitboxes(bool Hitbox);
 
 	enum class Status
 	{
@@ -89,6 +91,7 @@ protected:
 	bool m_JustSpawned;
 	bool m_IsHit;
 	bool m_DamagedWhileStunned;
+	bool m_ShowHitboxesAndBorders;
 	int m_Health;
 	int m_GotLightHitAmount;
 	int m_ObjectRumble;

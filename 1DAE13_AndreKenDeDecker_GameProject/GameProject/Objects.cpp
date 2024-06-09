@@ -12,6 +12,7 @@ Objects::Objects(Point2f Position, float Width, float Height, SoundEffects* Soun
 	m_IsLeft = false;
 	m_IsFlipped = false;
 	m_DoDamage = false;
+	m_ShowHitboxesAndBorders = false;
 
 	m_Velocity = Vector2f{ 0.f, 0.f };
 
@@ -36,7 +37,7 @@ Objects::Objects(Point2f Position, float Width, float Height, SoundEffects* Soun
 	}
 }
 
-Objects::~Objects()
+Objects::~Objects() noexcept
 {
 
 	if (m_InstanceCounter == 1)
@@ -57,8 +58,11 @@ void Objects::Draw() const
 	ResetSprite();
 
 
-	utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
-	utils::DrawPolygon(m_HitboxTransformed);
+	if(m_ShowHitboxesAndBorders)
+	{
+		utils::SetColor(Color4f(0, 1.0f, 0, 1.0f));
+		utils::DrawPolygon(m_HitboxTransformed);
+	}
 }
 
 void Objects::Update(float elapsedSec, const Point2f& Position, bool IsLeft, const std::vector<std::vector<Point2f>>& MapSvg)
@@ -221,6 +225,11 @@ void Objects::SetIsFlipped(bool IsFlipped)
 void Objects::SetRumble(int Rumble)
 {
 	m_Rumble = Rumble;
+}
+
+void Objects::SetShowHitboxes(bool Hitbox)
+{
+	m_ShowHitboxesAndBorders = Hitbox;
 }
 
 void Objects::TranslateSprite() const

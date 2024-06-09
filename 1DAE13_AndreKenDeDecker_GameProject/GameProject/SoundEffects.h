@@ -2,11 +2,11 @@
 #include "SoundEffect.h"
 #include <vector>
 #include <iostream>
-class SoundEffects
+class SoundEffects final
 {
 public:
 	explicit SoundEffects();
-	~SoundEffects();
+	~SoundEffects() noexcept;
 
 	SoundEffects(const SoundEffects& other) = delete;
 	SoundEffects& operator=(const SoundEffects& other) = delete;
@@ -22,6 +22,7 @@ public:
 	void Play(SoundEffectType Effect);
 	void Stop(SoundEffectType Effect);
 	void Stop();
+	void SetVolume(int Volume);
 
 private:
 	std::vector<SoundEffect*> m_ptrSoundEffects;

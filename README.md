@@ -46,15 +46,13 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-TODO: add screenshot 
 ![](https://github.com/HowestDAE/DAE13-KennoRat/blob/main/ScottVSWorld.jpg)
 
 Here's why:
-TODO: describe why you chose this game 
 * I wanted to make a side-scrolling beat'em up.
 * The game has the potential to get full marks.
 * The soundtrack is great and the sprites are easy to get online.
-* I liked the movie.
+* I liked the movie and the animated serie.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -87,13 +85,12 @@ Detailed instructions on how to run your game project are in this section.
 
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
 * Visual Studio 2022
 
 ### How to run the project
 
-Explain which project (version) must be run.
-* any extra steps if required 
+* Set "GameProject" as Startup Project.
+* For "GameProject" Dependencies set "Engine" as Project Dependency.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -102,16 +99,23 @@ Explain which project (version) must be run.
 <!-- HOW TO PLAY -->
 ## How to play
 
-Use this space to show useful examples of how a game can be played. 
-Additional screenshots and demos work well in this space. 
+You move and fight till you reach the right side of the map.
+![](https://github.com/HowestDAE/DAE13-KennoRat/blob/main/ProjectGameplay.jpg)
+![](https://github.com/HowestDAE/DAE13-KennoRat/blob/main/HelpAndOptions.jpg)
 
 ### Controls
-* Movement: WASD or Arrow keys
+* Movement: WASD (ZQSD for AZERTY Users)
 * Jump: Space
 * Sprint: double tap Left or Right Movement
 * Light Attack: J 
 * Heavy Attack: K
+* Block: L
 * JumpKick: J during jump
+
+### Menu Controls
+* UP: W (Z)
+* DOWN: S
+* ENTER: RETURN button or SPACEBAR
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -121,13 +125,22 @@ Additional screenshots and demos work well in this space.
 <!-- CLASS STRUCTURE -->
 ## Class structure 
 
-### Object composition 
-If you applied object composition (optional); explain where and how.
+### Object Aggregation
+The "Soundeffect" member is part of multiple other classes (Level Manager, Enemies, Player), but initialised in Game.h.
+The different classes uses the member to play sound effects that are all initaliased in the "SoundEffect" class.
+
+### Object Association
+The "Objects" class interacts with "Enemies" and the "Player". This is to know which object the Player or enemy is holding since there are multiple objects in the world.
+The objects also uses the interaction to know which position to follow if it is picked up.
 
 ### Inheritance 
-Explain where you applied inheritance (mandatory).
+Inheritance is used for the different Enemy Types. Each derived enemy has different health, percentage to block and texture. 
+They all use the same variable members and functions as the base class (EnemyMike). Only one derived enemy (EnemyLee) is using polymorphism to have diffent behaviour.
 
-### ..
+### Object composition 
+Not Used.
+
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -136,17 +149,17 @@ Explain where you applied inheritance (mandatory).
 ## Checklist
 
 - [x] Accept / set up github project
-- [ ] week 01 topics applied
-    - [ ] const keyword applied proactively (variables, functions,..)
-    - [ ] static keyword applied proactively (class variables, static functions,..)
+- [x] week 01 topics applied
+    - [x] const keyword applied proactively (variables, functions,..)
+    - [x] static keyword applied proactively (class variables, static functions,..)
     - [ ] object composition (optional)
-- [ ] week 02 topics applied
-- [ ] week 03 topics applied
-- [ ] week 04 topics applied
+- [x] week 02 topics applied
+- [x] week 03 topics applied
+- [x] week 04 topics applied
 - [ ] week 05 topics applied
-- [ ] week 06 topics applied
-- [ ] week 07 topics applied
-- [ ] week 08 topics applied
+- [x] week 06 topics applied
+- [x] week 07 topics applied
+- [x] week 08 topics applied
 - [ ] week 09 topics applied (optional)
 - [ ] week 10 topics applied (optional)
 
@@ -154,10 +167,11 @@ Explain where you applied inheritance (mandatory).
 
 <!-- CONTACT -->
 ## Contact
+Andre Ken De Decker 1GD13
+- Personal Email: dedeckerken@gmail.com
+- School Email: ken.de.decker@student.howest.be
 
-Your Name - ken.de.decker@student.howest.be
-
-Project Link: [https://github.com/your_username/repo_name](https://github.com/your_username/repo_name)
+Project Link: [https://github.com/HowestDAE/DAE13-KenDeDecker](https://github.com/HowestDAE/DAE13-KenDeDecker)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -167,8 +181,8 @@ Project Link: [https://github.com/your_username/repo_name](https://github.com/yo
 
 Use this space to list resources you find helpful and would like to give credit to. 
 
-* [Example 1: cpp reference on std::vector](https://en.cppreference.com/w/cpp/container/vector)
-* ..
+* [cpp reference on std::vector](https://en.cppreference.com/w/cpp/container/vector)
+* [Spritesheets](https://www.spriters-resource.com/xbox_360/scottpilgrimvstheworldthegame/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
